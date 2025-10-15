@@ -1,0 +1,25 @@
+.panel {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background-color: var(--color-primary);
+  padding: var(--spacing-medium);
+  border-radius: var(--border-radius);
+  width: 250px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.title {
+  font-weight: bold;
+  margin-bottom: var(--spacing-small);
+}
+
+.notification {
+  margin-bottom: var(--spacing-small);
+}
+
+.notification small {
+  font-size: 0.8rem;
+  color: #666;
+}

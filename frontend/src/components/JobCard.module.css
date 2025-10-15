@@ -1,0 +1,22 @@
+.card {
+  background-color: var(--color-primary);
+  padding: var(--spacing-medium);
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-medium);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.card:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.title {
+  font-weight: bold;
+  margin-bottom: var(--spacing-small);
+}
+
+.company, .location, .salary {
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
