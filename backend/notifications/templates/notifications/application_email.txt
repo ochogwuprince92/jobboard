@@ -1,0 +1,11 @@
+Hello {{ email }},
+
+A new application has been submitted for your job:
+
+Job: {{ job_title }}
+Applicant: {{ applicant_email }}
+
+Please log in to view more details.
+
+Thank you,
+JobBoard Team

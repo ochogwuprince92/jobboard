@@ -1,0 +1,11 @@
+Hello {{ email }},
+
+A new job has been posted that matches your preferences:
+
+Title: {{ job_title }}
+Company: {{ company }}
+
+Check it out!
+
+Thank you,
+JobBoard Team

@@ -1,0 +1,8 @@
+Hello,
+
+Your verification OTP is: {{ otp }}
+
+This code will expire in 10 minutes.
+
+Thank you!
+The JobBoard Team
