@@ -1,41 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import api from "@/lib/api";
-
-interface User {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: "job_seeker" | "employer";
-}
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import Loading from "@/components/common/Loading";
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data } = await api.get("/users/me/"); // endpoint for current user
-        setUser(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  if (loading) return <p>Loading...</p>;
-  if (!user) return <p>Unauthorized</p>;
+  if (isLoading) return <Loading fullScreen message="Loading dashboard..." />;
+  
+  if (!isAuthenticated) {
+    router.push("/login");
+    return null;
+  }
 
   return (
-    <div className="dashboard">
-      <h1>Welcome, {user.first_name}</h1>
-      {user.role === "job_seeker" ? <JobSeekerPanel /> : <EmployerPanel />}
+    <div style={{ padding: "2rem", maxWidth: "1200px", margin: "0 auto" }}>
+      <h1>Welcome, {user?.first_name}!</h1>
+      <p style={{ color: "#666", marginBottom: "2rem" }}>
+        {user?.email}
+      </p>
+      {user?.is_employer ? <EmployerPanel /> : <JobSeekerPanel />}
     </div>
   );
 }

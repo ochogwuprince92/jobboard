@@ -1,44 +1,17 @@
-"use client";
+import axiosClient from "./axiosClient";
+import type { Notification } from "@/types";
 
-import { useQuery } from "@tanstack/react-query";
-import api from "@/api";
+export const getNotifications = async (): Promise<Notification[]> => {
+  const response = await axiosClient.get("/notifications/");
+  return response.data;
+};
 
-interface Notification {
-  id: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
+export const markAsRead = async (id: number) => {
+  const response = await axiosClient.patch(`/notifications/${id}/`, { is_read: true });
+  return response.data;
+};
 
-interface NotificationPanelProps {
-  userRole: "seeker" | "employer";
-}
-
-export default function NotificationPanel({ userRole }: NotificationPanelProps) {
-  const { data: notifications = [], isLoading, isError } = useQuery<Notification[]>({
-    queryKey: ["notifications", userRole],
-    queryFn: async (): Promise<Notification[]> => {
-      const res = await api.get(`/notifications/?role=${userRole}`);
-      return res.data;
-    },
-    refetchInterval: 10000, // poll every 10s
-  });
-
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Error fetching notifications</div>;
-
-  return (
-    <div style={{ position: "fixed", top: 10, right: 10, background: "#e8ffe8", padding: 10, borderRadius: 8 }}>
-      <strong>Notifications:</strong>
-      <ul>
-        {notifications.length === 0 && <li>No notifications</li>}
-        {notifications.map((n) => (
-          <li key={n.id}>
-            <p>{n.message}</p>
-            <small>{new Date(n.timestamp).toLocaleString()}</small>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+export const markAllAsRead = async () => {
+  const response = await axiosClient.post("/notifications/mark-all-read/");
+  return response.data;
+};

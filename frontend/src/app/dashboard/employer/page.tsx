@@ -37,6 +37,3 @@ export default function EmployerDashboard() {
   );
 }
 
-import NotificationPanel from "@/components/NotificationPanel";
-
-<NotificationPanel userRole="employer" />

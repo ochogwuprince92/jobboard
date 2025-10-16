@@ -1,39 +1,43 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "@/lib/config";
-import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
+import { getNotifications } from "@/api/notifications";
+import type { Notification } from "@/types";
+import Loading from "@/components/common/Loading";
 
 export default function NotificationsPage() {
-  const { token } = useAuth();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    if (token) fetchNotifications();
-  }, [token]);
+  const { data: notifications = [], isLoading, error } = useQuery<Notification[]>({
+    queryKey: ["notifications"],
+    queryFn: getNotifications,
+    enabled: isAuthenticated,
+  });
 
-  const fetchNotifications = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/notifications/`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setNotifications(res.data);
-    } catch (err) {
-      console.error("Notification fetch error:", err);
-    }
-  };
+  if (isLoading) return <Loading fullScreen message="Loading notifications..." />;
 
   return (
-    <div style={{ maxWidth: 700, margin: "40px auto" }}>
+    <div style={{ maxWidth: 700, margin: "40px auto", padding: "1rem" }}>
       <h1>Notifications</h1>
+      {error && <p style={{ color: "red" }}>Error loading notifications</p>}
       {notifications.length === 0 && <p>No notifications yet.</p>}
-      <ul>
-        {notifications.map((n, i) => (
-          <li key={i} style={{ padding: "8px 0", borderBottom: "1px solid #ddd" }}>
-            <strong>{n.title}</strong>
-            <p>{n.message}</p>
-            <small>{new Date(n.created_at).toLocaleString()}</small>
+      <ul style={{ listStyle: "none", padding: 0 }}>
+        {notifications.map((n) => (
+          <li 
+            key={n.id} 
+            style={{ 
+              padding: "1rem", 
+              borderBottom: "1px solid #ddd",
+              background: n.is_read ? "transparent" : "#f0f3ff",
+              borderRadius: "4px",
+              marginBottom: "0.5rem"
+            }}
+          >
+            <p style={{ margin: "0 0 0.5rem 0", fontWeight: 500 }}>{n.message}</p>
+            <small style={{ color: "#666" }}>
+              {new Date(n.created_at).toLocaleString()}
+            </small>
           </li>
         ))}
       </ul>

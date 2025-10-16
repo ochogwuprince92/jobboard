@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from datetime import timedelta
 import environ
 from django.conf import settings
 
@@ -28,9 +29,14 @@ FRONTEND_URL = env("FRONTEND_URL")
 # SECURITY
 # -----------------------
 DEBUG = env.bool("DEBUG", default=False)
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+# In production, set ALLOWED_HOSTS to your domain(s)
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+])
 
 # -----------------------
 # DATABASE
@@ -77,6 +83,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_extensions",
     "corsheaders",
+    "drf_spectacular",
 
 ]
 
@@ -172,12 +179,54 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle"
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+        "login": "5/minute", # Custom throttle for login attempts
+        "otp_request": "3/hour", # Custom throttle for OTP requests
+    },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 
 # JWT Settings
 SIMPLE_JWT = {
     "SIGNING_KEY": env("JWT_SECRET_KEY"),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("ACCESS_TOKEN_LIFETIME_MINUTES", default=5)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=env.int("REFRESH_TOKEN_LIFETIME_DAYS", default=1)),
 }
 
 AUTH_USER_MODEL = "users.User"
+
+# OTP Settings
+OTP_EXPIRATION_MINUTES = env.int("OTP_EXPIRATION_MINUTES", default=10)
+
+# -----------------------
+# DRF SPECTACULAR (Swagger/OpenAPI)
+# -----------------------
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Job Board API",
+    "DESCRIPTION": "A comprehensive job board platform with user authentication, job listings, applications, and AI-powered features",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
+    "SECURITY": [
+        {
+            "Bearer": []
+        }
+    ],
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "Bearer": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+}

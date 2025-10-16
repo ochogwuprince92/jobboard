@@ -41,10 +41,7 @@ export default function SeekerDashboard() {
       {savedJobs.map((job) => <JobCard key={job.id} {...job} />)}
 
       <h2>Applied Jobs</h2>
-      {appliedJobs.map((job) => <JobCard key={job.id} {...job.job} />)}
+      {appliedJobs.map((application) => <JobCard key={application.id} {...application} />)}
     </div>
   );
 }
-import NotificationPanel from "@/components/NotificationPanel";
-
-<NotificationPanel userRole="seeker" />

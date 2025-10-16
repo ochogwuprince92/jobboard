@@ -1,6 +1,7 @@
 from rest_framework import viewsets, filters, generics
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination # Import PageNumberPagination
 from .models import Job, JobApplication
 from .serializers import JobSerializer, JobApplicationSerializer
 from .permissions import IsEmployer, IsApplicantOrReadOnly
@@ -10,13 +11,13 @@ from .filters import JobFilter
 # Job ViewSet
 # -----------------------------
 class JobViewSet(viewsets.ModelViewSet):
-    queryset = Job.objects.filter(is_active=True).order_by("-posted_at")
+    queryset = Job.objects.filter(is_active=True).select_related("company").order_by("-posted_at") # Select related company
     serializer_class = JobSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = JobFilter
-    search_fields = ["title", "description", "requirements", "company", "location"]
-    ordering_fields = ["posted_at", "salary", "company"]
-    #kill -9pagination_class = PageNumberPagination  # built-in DRF pagination
+    search_fields = ["title", "description", "requirements", "company__company_name", "location"] # Update search fields
+    ordering_fields = ["posted_at", "min_salary", "max_salary", "company__company_name"] # Update ordering fields
+    pagination_class = PageNumberPagination  # built-in DRF pagination
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
@@ -24,17 +25,14 @@ class JobViewSet(viewsets.ModelViewSet):
         return [IsAuthenticatedOrReadOnly()]
 
     def perform_create(self, serializer):
+        # Ensure the posted_by user is an employer
+        if not self.request.user.is_employer:
+            raise ValidationError({"detail": "Only employers can post jobs."})
         serializer.save(posted_by=self.request.user)
 
     def get_queryset(self):
         qs = super().get_queryset()
-        keyword = self.request.query_params.get("keyword")
-        location = self.request.query_params.get("location")
-        # Add filters for company, industry, etc.
-        if keyword:
-            qs = qs.filter(title__icontains=keyword)
-        if location:
-            qs = qs.filter(location__icontains=location)
+        # Filtering is now handled by DjangoFilterBackend and JobFilter
         return qs
 
 # -----------------------------

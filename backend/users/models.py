@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
+from datetime import timedelta
+from django.conf import settings
 
 # -----------------------------
 # Custom User Manager
@@ -65,15 +67,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 # -----------------------------
 # OTP Model for Email/Phone Verification
 # -----------------------------
+def get_default_expiry():
+    """Helper function to calculate default OTP expiry time"""
+    return timezone.now() + timedelta(minutes=settings.OTP_EXPIRATION_MINUTES)
+
 class EmailOTP(models.Model):
     """
     Stores one-time passwords for email/phone verification and password reset.
     """
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    otp = models.CharField(max_length=6)
+    otp = models.CharField(max_length=128) # Store hashed OTP
     purpose = models.CharField(max_length=50)  # register, reset_password, etc.
     created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=get_default_expiry) # OTP expiration time
     is_used = models.BooleanField(default=False)
 
     def __str__(self):

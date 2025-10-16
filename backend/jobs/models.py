@@ -27,11 +27,12 @@ class Job(models.Model):
     ]
 
     title = models.CharField(max_length=200)
-    company = models.CharField(max_length=200)
+    company = models.ForeignKey("employers.Employer", on_delete=models.CASCADE, related_name="jobs") # Link to Employer model
     location = models.CharField(max_length=100)
     description = models.TextField()
     requirements = models.TextField()
-    salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    min_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) # Min salary
+    max_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) # Max salary
     employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES)
     posted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     tags = models.ManyToManyField(JobTag, blank=True)

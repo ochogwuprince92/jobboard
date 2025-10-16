@@ -22,15 +22,24 @@ class EmployerViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ["list", "retrieve"]:
             return [AllowAny()]
-        elif self.action in ["create", "update", "partial_update", "me"]:
+        elif self.action == "create":
+            # Only authenticated users who are not already employers can create a profile
             return [IsAuthenticated()]
+        elif self.action in ["update", "partial_update", "me"]:
+            # Only the employer themselves can update their profile or view 'me'
+            return [IsAuthenticated(), IsEmployerOrReadOnly()]
         return [IsEmployerOrReadOnly()]
 
     def perform_create(self, serializer):
+        user = self.request.user
         # Prevent creating multiple employer profiles
-        if hasattr(self.request.user, "employer_profile"):
+        if hasattr(user, "employer_profile"):
             raise ValidationError({"detail": "Employer profile already exists."})
-        serializer.save(user=self.request.user)
+        
+        # Ensure the user is marked as an employer
+        user.is_employer = True
+        user.save()
+        serializer.save(user=user)
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
     def me(self, request):

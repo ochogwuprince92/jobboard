@@ -4,6 +4,7 @@ from django.conf import settings
 import random
 import jwt
 from datetime import datetime, timedelta
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 # -----------------------------
@@ -18,11 +19,12 @@ class OTPService:
     @classmethod
     def send_otp(cls, user, purpose):
         """Create and send OTP for the given user and purpose."""
-        otp = cls.generate_otp()
-        UserRepository.create_otp(user, otp, purpose)
+        otp = cls.generate_otp() # Generate plain text OTP for sending
+        UserRepository.create_otp(user, otp, purpose) # Repository handles hashing and expiration
 
         if user.email:
             send_otp_email(user.email, otp)
+        # TODO: Add logic to send OTP via SMS if phone_number is available
 
         return otp
 
@@ -46,7 +48,7 @@ class AuthService:
         """Create a short-lived JWT for email verification."""
         payload = {
             "user_id": user.id,
-            "exp": datetime.utcnow() + timedelta(minutes=15)
+            "exp": datetime.utcnow() + timedelta(minutes=15) # Token valid for 15 minutes
         }
         return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
@@ -102,11 +104,14 @@ class AuthService:
 
     @staticmethod
     def login(identifier, password):
-        """Authenticate a user by email or phone."""
+        """Authenticate a user by email or phone and return JWT tokens."""
         user = UserRepository.get_by_email_or_phone(identifier)
         if user and user.check_password(password):
-            # TODO: Replace with proper JWT logic
-            return {"token": "jwt_token_stub"}
+            refresh = RefreshToken.for_user(user)
+            return {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }
         return None
 
     @staticmethod

@@ -2,24 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import axios from "axios";
-import { API_BASE_URL } from "@/lib/config";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/context/AuthContext";
+import { createJob } from "@/api/jobs";
+import Loading from "@/components/common/Loading";
 
 export default function CreateJobPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
   const [form, setForm] = useState({
     title: "",
     description: "",
+    requirements: "",
     location: "",
-    salary: "",
+    min_salary: "",
+    max_salary: "",
+    employment_type: "full-time",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -29,16 +32,25 @@ export default function CreateJobPage() {
     setError("");
 
     try {
-      await axios.post(`${API_BASE_URL}/jobs/`, form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      router.push("/dashboard/employer");
+      await createJob({
+        ...form,
+        min_salary: form.min_salary ? parseInt(form.min_salary) : undefined,
+        max_salary: form.max_salary ? parseInt(form.max_salary) : undefined,
+      } as any);
+      router.push("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Something went wrong");
+      setError(err.response?.data?.detail || err.response?.data?.error || "Failed to create job");
     } finally {
       setLoading(false);
     }
   };
+
+  if (authLoading) return <Loading fullScreen message="Loading..." />;
+  
+  if (!isAuthenticated || !user?.is_employer) {
+    router.push("/login");
+    return null;
+  }
 
   return (
     <div style={{ maxWidth: 600, margin: "40px auto", padding: 20 }}>
@@ -57,7 +69,7 @@ export default function CreateJobPage() {
             value={form.title}
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px" }}
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
           />
         </label>
 
@@ -69,7 +81,19 @@ export default function CreateJobPage() {
             onChange={handleChange}
             required
             rows={5}
-            style={{ width: "100%", padding: "8px" }}
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
+          />
+        </label>
+
+        <label>
+          Requirements
+          <textarea
+            name="requirements"
+            value={form.requirements}
+            onChange={handleChange}
+            rows={3}
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
+            placeholder="Required skills and qualifications"
           />
         </label>
 
@@ -81,21 +105,50 @@ export default function CreateJobPage() {
             value={form.location}
             onChange={handleChange}
             required
-            style={{ width: "100%", padding: "8px" }}
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
           />
         </label>
 
         <label>
-          Salary
-          <input
-            type="text"
-            name="salary"
-            value={form.salary}
+          Employment Type
+          <select
+            name="employment_type"
+            value={form.employment_type}
             onChange={handleChange}
-            placeholder="e.g. ₦150,000/month"
-            style={{ width: "100%", padding: "8px" }}
-          />
+            style={{ width: "100%", padding: "8px", marginTop: "4px" }}
+          >
+            <option value="full-time">Full-time</option>
+            <option value="part-time">Part-time</option>
+            <option value="contract">Contract</option>
+            <option value="internship">Internship</option>
+          </select>
         </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+          <label>
+            Min Salary
+            <input
+              type="number"
+              name="min_salary"
+              value={form.min_salary}
+              onChange={handleChange}
+              placeholder="50000"
+              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
+            />
+          </label>
+
+          <label>
+            Max Salary
+            <input
+              type="number"
+              name="max_salary"
+              value={form.max_salary}
+              onChange={handleChange}
+              placeholder="100000"
+              style={{ width: "100%", padding: "8px", marginTop: "4px" }}
+            />
+          </label>
+        </div>
 
         <button
           type="submit"

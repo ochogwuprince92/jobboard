@@ -2,31 +2,20 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/api";
+import { getJobs } from "@/api/jobs";
+import type { Job } from "@/types";
 import JobCard from "@/components/JobCard";
 import JobFilter from "@/components/JobFilter";
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  salary?: string;
-  employment_type?: string;
-  remote?: boolean;
-}
 
 export default function JobsPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
 
-  const { data: jobs = [], isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["jobs", filters],
-    queryFn: async () => {
-      const params = new URLSearchParams(filters);
-      const res = await api.get(`/jobs/?${params.toString()}`);
-      return res.data;
-    },
+    queryFn: () => getJobs(filters),
   });
+
+  const jobs = data?.results || [];
 
   const handleFilter = (newFilters: Record<string, string>) => {
     setFilters(newFilters);

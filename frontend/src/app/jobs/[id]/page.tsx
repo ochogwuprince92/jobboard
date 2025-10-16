@@ -2,29 +2,16 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/api";
-
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  salary?: string;
-  employment_type?: string;
-  remote?: boolean;
-  description: string;
-  requirements?: string;
-}
+import { getJobById } from "@/api/jobs";
+import type { Job } from "@/types";
 
 export default function JobDetailPage() {
   const { id } = useParams();
 
   const { data: job, isLoading } = useQuery({
     queryKey: ["job", id],
-    queryFn: async () => {
-      const res = await api.get(`/jobs/${id}/`);
-      return res.data;
-    },
+    queryFn: () => getJobById(id as string),
+    enabled: !!id,
   });
 
   if (isLoading) return <div>Loading job details...</div>;
