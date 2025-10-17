@@ -35,22 +35,24 @@ class JobTests(APITestCase):
         # -----------------------------
         self.job1 = Job.objects.create(
             title="Backend Developer",
-            company="NextGen Tech",
+            company=self.employer,
             location="Remote",
             description="Work with Django and FastAPI",
             requirements="3+ years experience with Python",
-            salary=500000,
+            min_salary=400000,
+            max_salary=600000,
             employment_type="Full-time",
             posted_by=self.employer_user
         )
 
         self.job2 = Job.objects.create(
             title="Frontend Developer",
-            company="NextGen Tech",
+            company=self.employer,
             location="Lagos",
             description="React + Next.js",
             requirements="2+ years experience",
-            salary=400000,
+            min_salary=350000,
+            max_salary=500000,
             employment_type="Full-time",
             posted_by=self.employer_user
         )
@@ -101,7 +103,7 @@ class JobTests(APITestCase):
     # SORT
     # -----------------------------
     def test_sort_jobs_by_salary_desc(self):
-        url = reverse("jobs:job-list") + "?ordering=-salary"
+        url = reverse("jobs:job-list") + "?ordering=-max_salary"
         response = self.user_client.get(url)
         self.assertEqual(response.data[0]["title"], "Backend Developer")
         self.assertEqual(response.data[1]["title"], "Frontend Developer")
@@ -113,26 +115,29 @@ class JobTests(APITestCase):
         url = reverse("jobs:job-list")
         data = {
             "title": "DevOps Engineer",
-            "company": "NextGen Tech",
+            "company_id": self.employer.id,  # Use company_id instead of company
             "location": "Abuja",
             "description": "CI/CD, Docker, Kubernetes",
             "requirements": "2+ years experience",
-            "salary": 450000,
+            "min_salary": 400000,
+            "max_salary": 500000,
             "employment_type": "Full-time"
         }
         response = self.employer_client.post(url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        print(f"Response data: {response.data}")  # Debug print
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, f"Expected 201, got {response.status_code}. Response: {response.data}")
         self.assertEqual(Job.objects.count(), 3)
 
     def test_non_employer_cannot_create_job(self):
         url = reverse("jobs:job-list")
         data = {
             "title": "DevOps Engineer",
-            "company": "NextGen Tech",
+            "company_id": self.employer.id,  # Use company_id instead of company
             "location": "Abuja",
             "description": "CI/CD, Docker, Kubernetes",
             "requirements": "2+ years experience",
-            "salary": 450000,
+            "min_salary": 400000,
+            "max_salary": 500000,
             "employment_type": "Full-time"
         }
         response = self.user_client.post(url, data, format="json")

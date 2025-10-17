@@ -18,6 +18,23 @@ class UserManager(BaseUserManager):
 
         if email:
             email = self.normalize_email(email)
+            
+        # Ensure at least one of email or phone is set
+        if not email and not phone_number:
+            raise ValueError("Either email or phone number must be provided")
+            
+        # Check for existing users with the same email or phone
+        existing_user = None
+        if email:
+            existing_user = self.model.objects.filter(email__iexact=email).first()
+        if not existing_user and phone_number:
+            existing_user = self.model.objects.filter(phone_number=phone_number).first()
+            
+        if existing_user:
+            if email and existing_user.email and existing_user.email.lower() == email.lower():
+                raise ValueError("A user with this email already exists.")
+            if phone_number and existing_user.phone_number == phone_number:
+                raise ValueError("A user with this phone number already exists.")
 
         user = self.model(email=email, phone_number=phone_number, **extra_fields)
         user.set_password(password)
@@ -56,12 +73,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Connect the custom manager
     objects = UserManager()
 
-    # Email is used by default for admin login
+    # Use email as the default username field for admin
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["first_name", "last_name", "phone_number"]
+    # Make phone_number required only if email is not provided
+    REQUIRED_FIELDS = ["first_name", "last_name"]
+    
+    def get_username(self):
+        """Return the username for this User (email or phone number)."""
+        return self.email or self.phone_number
 
     def __str__(self):
-        return self.email or self.phone_number
+        """String representation of the user (email if available, otherwise phone number)."""
+        if self.email:
+            return self.email
+        return f"User {self.phone_number}" if self.phone_number else "Anonymous User"
 
 
 # -----------------------------

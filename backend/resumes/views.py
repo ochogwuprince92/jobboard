@@ -8,9 +8,12 @@ from .services import ResumeService
 class ResumeViewSet(viewsets.ModelViewSet):
     serializer_class = ResumeSerializer
     permission_classes = [IsAuthenticated]
+    queryset = Resume.objects.none()  # Default queryset to prevent warning
 
     def get_queryset(self):
         # Only the authenticated user's resumes
+        if not self.request.user.is_authenticated:
+            return Resume.objects.none()
         return Resume.objects.filter(applicant=self.request.user)
     
     def perform_create(self, serializer):

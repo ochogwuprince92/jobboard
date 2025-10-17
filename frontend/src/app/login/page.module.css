@@ -68,28 +68,40 @@
   gap: 1.5rem;
 }
 
-.inputGroup {
+.formGroup {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 }
 
-.inputGroup label {
+.formGroup label {
   font-weight: 500;
   color: #4a5568;
   font-size: 0.875rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   letter-spacing: 0.3px;
+  display: block;
 }
 
 .input {
-  padding: 0.875rem 1.125rem;
+  padding: 0.875rem 1.125rem 0.875rem 3rem;
   border: 1.5px solid #d1fae5;
   border-radius: 12px;
   font-size: 0.95rem;
   transition: all 0.3s ease;
   background: #f0fdf4;
   color: #2d3748;
+  width: 100%;
+  height: 50px;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #48bb78;
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.2);
+  background: #ffffff;
 }
 
 .input:hover {
@@ -97,69 +109,244 @@
   background: #ffffff;
 }
 
+.passwordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.passwordInputContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.iconContainer {
+  position: absolute;
+  left: 1rem;
+  color: #a0aec0;
+  z-index: 1;
+}
+
+.inputIcon {
+  font-size: 1rem;
+}
+
+.passwordInput {
+  padding-left: 3rem;
+  padding-right: 3rem;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.passwordToggle:hover {
+  color: #48bb78;
+  background: rgba(72, 187, 120, 0.1);
+}
+
+.passwordToggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.3);
+}
+
+.actionLinks {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: -0.5rem 0 0.5rem 0;
+}
+
+.actionLinks a, .actionLinks button {
+  color: #10b981;
+  font-size: 0.875rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: none;
+  border: none;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.actionLinks a:hover, .actionLinks button:not(:disabled):hover {
+  color: #059669;
+  text-decoration: underline;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.actionLinks button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.verifyButton {
+  color: #3182ce !important;
+  transition: all 0.2s ease;
+  display: inline-block !important;
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #3182ce;
+  border-radius: 6px;
+  background: rgba(49, 130, 206, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.verifyButton:not(:disabled):hover {
+  color: #2c5282 !important;
+  background-color: rgba(49, 130, 206, 0.1) !important;
+}
+
+.verifyButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.verifyButtonSent {
+  color: #38a169 !important;
+  cursor: default !important;
+}
+
+.verifyButton:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #3182ce;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.verifyButton:not(:disabled):hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
 .input:focus {
   outline: none;
-  border-color: #6ee7b7;
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(110, 231, 183, 0.2);
 }
 
 .error {
-  background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-  color: #c53030;
-  padding: 1rem;
-  border-radius: 12px;
-  font-size: 0.875rem;
-  border: 1px solid #fc8181;
+  color: #e53e3e;
+  background: #fff5f5;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+  border: 1px solid #fed7d7;
+  text-align: center;
+}
+
+.resendContainer {
+  margin-top: 1rem;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+.resendButton {
+  background: #3182ce;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 250px;
+  margin-top: 0.5rem;
+}
+
+.resendButton:hover:not(:disabled) {
+  background: #2c5282;
+  transform: translateY(-1px);
+}
+
+.resendButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .button {
-  background: linear-gradient(135deg, #68d391 0%, #48bb78 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
+  padding: 0.5rem 1rem;
   border: none;
-  padding: 1rem;
-  border-radius: 12px;
-  font-size: 0.95rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(72, 187, 120, 0.2);
-  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: auto;
+  min-width: 100px;
+  margin: 0.5rem auto 0;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
 }
 
 .button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(72, 187, 120, 0.3);
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
+  background: linear-gradient(135deg, #0d9b6c 0%, #047857 100%);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
 }
 
 .button:disabled {
-  opacity: 0.6;
+  background: #a7f3d0;
   cursor: not-allowed;
+  opacity: 0.8;
 }
 
-.footer {
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
-  color: #718096;
-  font-size: 0.9rem;
+.buttonIcon {
+  transition: transform 0.3s ease;
+  font-size: 0.8em;
 }
 
-.link {
-  color: #48bb78;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s ease;
+.button:hover:not(:disabled) .buttonIcon {
+  transform: translateX(2px);
 }
 
-.link:hover {
+.forgotPasswordLink:hover {
   color: #38a169;
   text-decoration: underline;
+  background: rgba(72, 187, 120, 0.1);
+}
+
+.forgotPasswordLink:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.3);
 }
 
 @media (max-width: 768px) {

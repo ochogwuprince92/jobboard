@@ -1,72 +1,40 @@
-/* Root theme variables */
-:root {
-  --color-primary: #d4f8d4; /* light green */
-  --color-primary-dark: #a3e4a3;
-  --color-text: #333;
-  --color-background: #fff;
-  --border-radius: 8px;
-  --spacing-small: 8px;
-  --spacing-medium: 16px;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200; /* Changed from border-border to border-gray-200 */
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-grass-100 to-mint-100 font-sans text-gray-900 antialiased;
+  }
 }
 
-/* Reset & base */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer components {
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-grass-50;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-grass-400 rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-grass-500;
+  }
 }
 
-html {
-  font-family: var(--font-geist-sans), sans-serif;
-  background-color: var(--color-background);
-  color: var(--color-text);
-  font-size: 16px;
-}
-
-body {
-  line-height: 1.5;
-}
-
-/* Links */
-a {
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-/* Lists */
-ul, ol {
-  padding-left: var(--spacing-medium);
-}
-
-/* Buttons */
-button {
-  cursor: pointer;
-  border: none;
-  border-radius: var(--border-radius);
-  background-color: var(--color-primary);
-  padding: var(--spacing-small) var(--spacing-medium);
-  transition: background 0.2s ease;
-}
-
-button:hover {
-  background-color: var(--color-primary-dark);
-}
-
-/* Inputs */
-input, select, textarea {
-  padding: var(--spacing-small);
-  border-radius: var(--border-radius);
-  border: 1px solid #ccc;
-  font-size: 1rem;
-}
-
-/* Responsive (mobile-first) */
-@media (max-width: 768px) {
-  html {
-    font-size: 14px;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

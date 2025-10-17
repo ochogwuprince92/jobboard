@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { register as registerAPI } from "@/api/auth";
 import type { RegisterData } from "@/types";
 import Loading from "@/components/common/Loading";
-import styles from "../login/page.module.css";
+import styles from "./register.module.css";
+import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock, FaBriefcase, FaUserTie } from "react-icons/fa";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -21,13 +22,35 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
+
+  const togglePasswordVisibility = (field: 'password' | 'confirmPassword') => {
+    if (field === 'password') {
+      setShowPassword(!showPassword);
+      setTimeout(() => passwordInputRef.current?.focus(), 0);
+    } else {
+      setShowConfirmPassword(!showConfirmPassword);
+      setTimeout(() => confirmPasswordInputRef.current?.focus(), 0);
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
+    setForm(prev => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,15 +97,14 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className={styles.container}>
-        <div className={styles.card}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: "4rem", marginBottom: "1rem" }}>✅</div>
-            <h1 className={styles.title}>Registration Successful!</h1>
-            <p className={styles.subtitle}>
-              Please check your email to verify your account.
-              Redirecting to login...
-            </p>
-          </div>
+        <div className={styles.card} style={{ textAlign: "center" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>✅</div>
+          <h1 className={styles.title}>Registration Successful!</h1>
+          <p className={styles.subtitle}>
+            Please check your email to verify your account.
+            <br />
+            Redirecting to login...
+          </p>
         </div>
       </div>
     );
@@ -95,9 +117,11 @@ export default function RegisterPage() {
         <p className={styles.subtitle}>Join our job board platform</p>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+          <div className={styles.nameFields}>
             <div className={styles.inputGroup}>
-              <label htmlFor="first_name">First Name</label>
+              <div className={styles.iconContainer}>
+                <FaUser className={styles.inputIcon} />
+              </div>
               <input
                 id="first_name"
                 name="first_name"
@@ -106,12 +130,14 @@ export default function RegisterPage() {
                 value={form.first_name}
                 onChange={handleChange}
                 required
-                className={styles.input}
+                className={`${styles.input} ${styles.nameInput}`}
               />
+              <label htmlFor="first_name" className={styles.floatingLabel}>First Name</label>
             </div>
-
             <div className={styles.inputGroup}>
-              <label htmlFor="last_name">Last Name</label>
+              <div className={styles.iconContainer}>
+                <FaUser className={styles.inputIcon} />
+              </div>
               <input
                 id="last_name"
                 name="last_name"
@@ -120,83 +146,124 @@ export default function RegisterPage() {
                 value={form.last_name}
                 onChange={handleChange}
                 required
-                className={styles.input}
+                className={`${styles.input} ${styles.nameInput}`}
               />
+              <label htmlFor="last_name" className={styles.floatingLabel}>Last Name</label>
             </div>
           </div>
 
           <div className={styles.inputGroup}>
-            <label htmlFor="email">Email</label>
+            <div className={styles.iconContainer}>
+              <FaEnvelope className={styles.inputIcon} />
+            </div>
             <input
               id="email"
               name="email"
               type="email"
-              placeholder="your@email.com"
+              placeholder=" "
               value={form.email}
               onChange={handleChange}
               required
               className={styles.input}
             />
+            <label htmlFor="email" className={styles.floatingLabel}>Email</label>
           </div>
 
           <div className={styles.inputGroup}>
-            <label htmlFor="phone_number">Phone Number</label>
+            <div className={styles.iconContainer}>
+              <FaPhone className={styles.inputIcon} />
+            </div>
             <input
               id="phone_number"
               name="phone_number"
               type="tel"
-              placeholder="+1234567890"
+              placeholder=" "
               value={form.phone_number}
               onChange={handleChange}
               required
               className={styles.input}
+              pattern="[0-9+\-\s()]*"
             />
+            <label htmlFor="phone_number" className={styles.floatingLabel}>Phone Number</label>
           </div>
 
           <div className={styles.inputGroup}>
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={handleChange}
-              required
-              minLength={8}
-              className={styles.input}
-            />
-            <small style={{ color: "#666", fontSize: "0.85rem" }}>
-              Minimum 8 characters
-            </small>
+            <div className={styles.passwordInputContainer}>
+              <div className={styles.iconContainer}>
+                <FaLock className={styles.inputIcon} />
+              </div>
+              <input
+                id="password"
+                ref={passwordInputRef}
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder=" "
+                value={form.password}
+                onChange={handlePasswordChange}
+                required
+                minLength={8}
+                className={`${styles.input} ${styles.passwordInput}`}
+              />
+              <label htmlFor="password" className={styles.floatingLabel}>Password</label>
+              <button
+                type="button"
+                onClick={() => togglePasswordVisibility('password')}
+                className={styles.passwordToggle}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+            <div className={styles.passwordHint}>
+              Must be at least 8 characters
+            </div>
           </div>
 
           <div className={styles.inputGroup}>
-            <label htmlFor="confirm_password">Confirm Password</label>
-            <input
-              id="confirm_password"
-              name="confirm_password"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-              className={styles.input}
-            />
+            <div className={styles.passwordInputContainer}>
+              <div className={styles.iconContainer}>
+                <FaLock className={styles.inputIcon} />
+              </div>
+              <input
+                id="confirm_password"
+                ref={confirmPasswordInputRef}
+                name="confirm_password"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder=" "
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                minLength={8}
+                className={`${styles.input} ${styles.passwordInput}`}
+              />
+              <label htmlFor="confirm_password" className={styles.floatingLabel}>Confirm Password</label>
+              <button
+                type="button"
+                onClick={() => togglePasswordVisibility('confirmPassword')}
+                className={styles.passwordToggle}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              id="is_employer"
-              name="is_employer"
-              type="checkbox"
-              checked={form.is_employer}
-              onChange={handleChange}
-              style={{ width: "auto" }}
-            />
-            <label htmlFor="is_employer" style={{ margin: 0, fontWeight: "normal" }}>
-              I'm an employer looking to post jobs
+          <div className={styles.checkboxContainer}>
+            <label className={styles.checkboxLabel}>
+              <input
+                id="is_employer"
+                name="is_employer"
+                type="checkbox"
+                checked={form.is_employer}
+                onChange={handleChange}
+                className={styles.checkboxInput}
+              />
+              <span className={styles.checkboxCustom}>
+                {form.is_employer ? <FaBriefcase className={styles.checkboxIcon} /> : <FaUserTie className={styles.checkboxIcon} />}
+              </span>
+              <span className={styles.checkboxText}>
+                {form.is_employer ? 'I want to post jobs' : 'I\'m looking for jobs'}
+              </span>
             </label>
           </div>
 

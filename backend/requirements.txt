@@ -59,3 +59,7 @@ wcwidth==0.2.14
 webdriver-manager==4.0.2
 websocket-client==1.9.0
 wsproto==1.2.0
+dj-rest-auth==7.0.1
+django-allauth==0.63.5
+python-jose==3.3.0
+python-jose[cryptography]==3.3.0

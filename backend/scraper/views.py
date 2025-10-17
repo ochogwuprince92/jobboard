@@ -1,7 +1,8 @@
-from rest_framework import status
+from rest_framework import status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
@@ -11,33 +12,17 @@ from .models import ScrapedJob
 from .serializers import ScrapedJobSerializer
 
 
+class ScrapingRequestSerializer(Serializer):
+    keyword = serializers.CharField(required=False)
+    location = serializers.CharField(required=False)
+    run_async = serializers.BooleanField(default=False, required=False)
+
+
 @extend_schema(
     tags=['Scraper'],
     summary='Trigger job scraping',
     description='Manually trigger job scraping from configured job sites. Admin only.',
-    parameters=[
-        OpenApiParameter(
-            name='keyword',
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description='Job keyword to search for',
-            required=False
-        ),
-        OpenApiParameter(
-            name='location',
-            type=OpenApiTypes.STR,
-            location=OpenApiParameter.QUERY,
-            description='Location to filter jobs',
-            required=False
-        ),
-        OpenApiParameter(
-            name='async',
-            type=OpenApiTypes.BOOL,
-            location=OpenApiParameter.QUERY,
-            description='Run scraping asynchronously using Celery',
-            required=False
-        ),
-    ],
+    request=ScrapingRequestSerializer,
     responses={
         200: {
             'description': 'Scraping completed successfully',
@@ -49,15 +34,9 @@ from .serializers import ScrapedJobSerializer
                 }
             }
         },
-        202: {
-            'description': 'Scraping task queued',
-            'examples': {
-                'application/json': {
-                    'message': 'Scraping task queued',
-                    'task_id': 'abc123'
-                }
-            }
-        }
+        400: {'description': 'Invalid parameters'},
+        403: {'description': 'Permission denied'},
+        500: {'description': 'Scraping failed'}
     }
 )
 @api_view(['POST'])
@@ -67,9 +46,19 @@ def trigger_scraping(request):
     Manually trigger job scraping from configured sources.
     Requires admin privileges.
     """
-    keyword = request.query_params.get('keyword')
-    location = request.query_params.get('location')
-    run_async = request.query_params.get('async', 'false').lower() == 'true'
+    # First try to get data from request body (for POST requests)
+    if request.method == 'POST' and request.data:
+        serializer = ScrapingRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        keyword = serializer.validated_data.get('keyword')
+        location = serializer.validated_data.get('location')
+        run_async = serializer.validated_data.get('run_async', False)
+    else:
+        # Fall back to query params (for GET requests or backward compatibility)
+        keyword = request.query_params.get('keyword')
+        location = request.query_params.get('location')
+        run_async = request.query_params.get('async', 'false').lower() == 'true'
     
     if run_async:
         # Run asynchronously with Celery

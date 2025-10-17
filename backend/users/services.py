@@ -106,13 +106,21 @@ class AuthService:
     def login(identifier, password):
         """Authenticate a user by email or phone and return JWT tokens."""
         user = UserRepository.get_by_email_or_phone(identifier)
-        if user and user.check_password(password):
-            refresh = RefreshToken.for_user(user)
-            return {
-                "refresh": str(refresh),
-                "access": str(refresh.access_token),
-            }
-        return None
+        
+        if not user:
+            raise ValueError("User not found.")
+            
+        if not user.check_password(password):
+            raise ValueError("Incorrect password.")
+            
+        if not user.is_verified:
+            raise ValueError("Please verify your email before logging in. Check your email for the verification link.")
+            
+        refresh = RefreshToken.for_user(user)
+        return {
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+        }
 
     @staticmethod
     def reset_password(user, new_password):

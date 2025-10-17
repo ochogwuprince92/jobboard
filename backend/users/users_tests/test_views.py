@@ -23,11 +23,19 @@ class UserViewsTests(APITestCase):
         self.assertIn("Verification sent", response.data["message"])
 
     def test_login_view(self):
+        # Verify the user's email first
+        from users.services import AuthService
+        token = AuthService.generate_verification_token(self.user)
+        verify_url = reverse("users:verify-email") + f"?token={token}"
+        self.client.get(verify_url)
+        
+        # Now try to log in
         url = reverse("users:login")
         data = {"identifier": self.email, "password": self.password}
-        response = self.client.post(url, data)
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 200)
-        self.assertIn("token", response.data)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
 
     def test_verify_email_view(self):
         from users.services import AuthService
