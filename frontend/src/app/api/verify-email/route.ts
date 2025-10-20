@@ -14,7 +14,8 @@ export async function GET(request: Request) {
   try {
     // Provide a default API URL if not set
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const verifyUrl = `${apiUrl}/api/verify-email/?token=${encodeURIComponent(token)}`;
+    const verifyUrl = `${apiUrl}/verify-email/?token=${token}`;
+
     
     console.log('Using API URL:', apiUrl);
     console.log('Verification URL:', verifyUrl);
