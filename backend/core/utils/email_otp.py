@@ -1,6 +1,7 @@
 from django.core.mail import send_mail
 from django.conf import settings
 
+
 def send_otp_email(email, otp):
     """
     Sends a one-time password (OTP) to the user's email.
@@ -8,12 +9,16 @@ def send_otp_email(email, otp):
     """
     subject = "Your OTP Code"
     message = f"Your one-time password is: {otp}"
+    # Use the configured EMAIL_FAIL_SILENTLY setting to avoid raising an
+    # exception (and returning HTTP 500) when the SMTP server is unreachable
+    # in development environments. In production you can set
+    # EMAIL_FAIL_SILENTLY=False to surface delivery errors.
     send_mail(
         subject,
         message,
         settings.DEFAULT_FROM_EMAIL,
         [email],
-        fail_silently=False,
+        fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False),
     )
 
 
@@ -29,5 +34,5 @@ def send_verification_email(email, token):
         message,
         settings.DEFAULT_FROM_EMAIL,
         [email],
-        fail_silently=False,
+        fail_silently=getattr(settings, "EMAIL_FAIL_SILENTLY", False),
     )

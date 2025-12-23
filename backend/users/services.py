@@ -8,11 +8,13 @@ from core.utils.email_otp import send_otp_email, send_verification_email
 from rest_framework.exceptions import ValidationError
 from users.models import User
 
+
 # -----------------------------
 # OTP Service
 # -----------------------------
 class OTPService:
     """Handles OTP generation, sending, and verification."""
+
     @staticmethod
     def generate_otp():
         """Generate a 6-digit OTP."""
@@ -38,11 +40,13 @@ class OTPService:
             return True
         return False
 
+
 # -----------------------------
 # Auth Service
 # -----------------------------
 class AuthService:
     """Handles user registration, login, verification, and password management."""
+
     @staticmethod
     def generate_verification_token(user):
         """Create a short-lived JWT for email verification."""
@@ -51,10 +55,6 @@ class AuthService:
             "exp": datetime.utcnow() + timedelta(minutes=15)
         }
         return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
-
-    
-class AuthService:
-    # ... your existing AuthService methods
 
     @staticmethod
     def verify_email(token: str):
@@ -86,7 +86,7 @@ class AuthService:
             raise ValidationError("Invalid token.")
         except Exception as e:
             raise ValidationError(str(e))
-        
+
     @staticmethod
     def decode_verification_token(token):
         """Decode and validate verification token."""

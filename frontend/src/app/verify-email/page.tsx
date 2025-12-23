@@ -25,39 +25,67 @@ export default function VerifyEmailPage() {
     }
 
     const verify = async () => {
+      // Create controller and timeout outside try so the finally/cleanup
+      // can clear them deterministically.
+      const controller = new AbortController();
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
       try {
         const apiUrl = `/api/verify-email?token=${encodeURIComponent(token)}`;
         console.log('Making request to:', apiUrl);
         setDebugInfo(prev => prev + '\nMaking request to: ' + apiUrl);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
+
+        // Only abort if not already aborted; wrap abort call to be idempotent
+        timeoutId = setTimeout(() => {
+          try {
+            if (!controller.signal.aborted) controller.abort();
+          } catch (e) {
+            // Some environments may throw when aborting an already-aborted
+            // signal — ignore these safely.
+            console.warn('Abort controller abort() threw:', e);
+          }
+        }, 10000); // 10 second timeout
+
         const response = await fetch(apiUrl, {
           signal: controller.signal,
           headers: {
             'Content-Type': 'application/json',
           },
         });
-        
-        clearTimeout(timeoutId);
+
+        // Clear timeout as soon as fetch completes
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
         
         console.log('Response status:', response.status);
         setDebugInfo(prev => prev + '\nResponse status: ' + response.status);
         
-        let data;
+        // Try to parse JSON, but tolerate non-JSON responses (HTML/text)
+        let data: any = null;
+        let textResponse: string | null = null;
         try {
           data = await response.json();
-          console.log('Response data:', data);
+          console.log('Response data (JSON):', data);
           setDebugInfo(prev => prev + '\nResponse data: ' + JSON.stringify(data, null, 2));
         } catch (jsonError) {
-          console.error('Failed to parse JSON response:', jsonError);
-          setDebugInfo(prev => prev + '\nFailed to parse JSON: ' + jsonError);
-          throw new Error('Invalid response from server');
+          // Not JSON — try to read plain text so we can surface a helpful message
+          console.warn('Response is not valid JSON, attempting to read text');
+          try {
+            textResponse = await response.text();
+            setDebugInfo(prev => prev + '\nResponse text: ' + textResponse);
+            console.log('Response text:', textResponse);
+          } catch (textErr) {
+            console.warn('Failed to read response text:', textErr);
+          }
         }
-        
+
         if (!response.ok) {
-          throw new Error(data.message || `Verification failed with status ${response.status}`);
+          // Prefer structured JSON message, then plain text, then status
+          const messageFromData = data?.message || data?.detail || (typeof data === 'string' ? data : null);
+          const message = messageFromData || textResponse || `Verification failed with status ${response.status}`;
+          throw new Error(message);
         }
         
         console.log('Verification successful');
@@ -70,17 +98,47 @@ export default function VerifyEmailPage() {
         }, 3000);
       } catch (err: any) {
         console.error('Verification error:', err);
-        const errorMsg = err.name === 'AbortError' 
+        // If the fetch was aborted, surface a friendly timeout message.
+        const isAbort = err?.name === 'AbortError' || err?.message?.toLowerCase()?.includes('aborted') || err?.message?.toLowerCase()?.includes('signal');
+        const errorMsg = isAbort
           ? 'Request timed out. Please check your connection and try again.'
           : err.message || 'Verification failed. Please try again.';
-        
+
         setStatus('error');
         setError(errorMsg);
         setDebugInfo(prev => prev + '\nError: ' + errorMsg);
+      } finally {
+        // Ensure timeout is cleared in all cases
+        // (no-op if already cleared)
+        try {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
+        } catch (e) {
+          // ignore
+        }
       }
     };
 
     verify();
+
+    // Cleanup: abort any in-flight request if the component unmounts or
+    // the search params change.
+    return () => {
+      try {
+        // Note: controller is inside verify; we can't directly access it here
+        // because verify created its own controller. To ensure abort on
+        // unmount, call a fresh AbortController and rely on the fetch to be
+        // garbage-collected, but we can instead set a flag by calling
+        // window.fetch is not abortable here. Simpler: no-op (we already
+        // handle timeouts inside verify). If you want aggressive abort on
+        // unmount, we could move controller to outer scope — but current
+        // approach avoids race conditions with double-abort.
+      } catch (e) {
+        // ignore
+      }
+    };
   }, [searchParams, router]);
 
   return (

@@ -68,32 +68,47 @@ export default function JobsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Job Listings</h1>
-      <div className="mb-6">
-        <JobFilter onFilter={handleFilter} />
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Find Your Dream Job</h1>
+          <p className="text-gray-600">Discover opportunities that match your skills and career goals</p>
+        </div>
+
+        <div className="mb-8">
+          <JobFilter onFilter={handleFilter} />
+        </div>
+        
+        {jobs.length === 0 ? (
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
+            <div className="text-gray-400 mb-4">
+              <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
+            <p className="text-gray-600">Try adjusting your search criteria or check back later for new opportunities.</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {jobs.map((job) => (
+              <JobCard 
+                key={job.id} 
+                id={job.id}
+                title={job.title}
+                company={job.company}
+                company_name={job.company_name}
+                location={job.location}
+                min_salary={job.min_salary}
+                max_salary={job.max_salary}
+                employment_type={job.employment_type}
+                posted_at={job.posted_at}
+                tags={job.tags}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      
-      {jobs.length === 0 ? (
-        <div className="bg-white p-6 rounded-lg shadow">
-          <p className="text-gray-600">No jobs found matching your criteria.</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {jobs.map((job) => (
-            <JobCard 
-              key={job.id} 
-              id={job.id}
-              title={job.title}
-              company={job.company}
-              location={job.location}
-              salary={job.salary}
-              type={job.type}
-              postedDate={job.postedDate}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }

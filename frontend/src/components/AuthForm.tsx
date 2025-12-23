@@ -194,7 +194,6 @@ export default function AuthForm({ type, onSubmit }: AuthFormProps) {
           </button>
         </div>
         */}
-          </form>
         </div>
       </div>
     </div>

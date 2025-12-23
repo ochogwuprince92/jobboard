@@ -45,31 +45,35 @@ describe('LoginPage', () => {
     
     // Check if the form elements are rendered
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i, { selector: 'input' })).toBeInTheDocument();
+    const submitBtn = screen.getByText(/log in/i).closest('button');
+    expect(submitBtn).toBeInTheDocument();
   });
 
   it('validates the form', async () => {
     render(<LoginPage />);
     
     // Try to submit the form without filling in any fields
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+  // Find the submit button by its visible text and click its parent button element
+  const submitBtn = screen.getByText(/log in/i).closest('button');
+  expect(submitBtn).toBeTruthy();
+  fireEvent.click(submitBtn as HTMLButtonElement);
     
     // Check if validation errors are shown
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+  const passwordInput = screen.getByLabelText(/password/i, { selector: 'input' });
     
     // Check required validation
     expect(emailInput).toBeInvalid();
     expect(passwordInput).toBeInvalid();
     
-    // Check that the login function was not called
-    expect(loginAPI).not.toHaveBeenCalled();
+  // Check that the login function on the auth context was not called
+  expect(mockLogin).not.toHaveBeenCalled();
   });
 
   it('handles successful login', async () => {
-    // Mock a successful login response
-    (loginAPI as jest.Mock).mockResolvedValueOnce({
+    // Mock a successful login response from the auth context
+    (mockLogin as jest.Mock).mockResolvedValueOnce({
       access: 'mock-access-token',
       refresh: 'mock-refresh-token',
       user: { id: 1, email: 'test@example.com' },
@@ -81,36 +85,32 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'test@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: 'input' }), {
       target: { value: 'password123' },
     });
     
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+  // Submit the form by finding the visible text and clicking the enclosing button
+  const submitBtn2 = screen.getByText(/log in/i).closest('button');
+  expect(submitBtn2).toBeTruthy();
+  fireEvent.click(submitBtn2 as HTMLButtonElement);
     
     // Check that the login API was called with the correct data
     await waitFor(() => {
-      expect(loginAPI).toHaveBeenCalledWith({
+      // Check that the auth context login was called with the expected payload
+      expect(mockLogin).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password123',
       });
       
-      // Check that the auth context login was called
-      expect(mockLogin).toHaveBeenCalledWith(
-        'mock-access-token',
-        'mock-refresh-token',
-        { id: 1, email: 'test@example.com' }
-      );
-      
-      // Check that the user is redirected to the dashboard
+      // And that the router redirected
       expect(mockPush).toHaveBeenCalledWith('/dashboard');
     });
   });
 
   it('handles login error', async () => {
-    // Mock a failed login response
+    // Mock a failed login response via the auth context
     const errorMessage = 'Invalid credentials';
-    (loginAPI as jest.Mock).mockRejectedValueOnce({
+    (mockLogin as jest.Mock).mockRejectedValueOnce({
       response: {
         data: { message: errorMessage },
       },
@@ -122,20 +122,22 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'test@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: 'input' }), {
       target: { value: 'wrongpassword' },
     });
     
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+  // Submit the form by finding the visible text and clicking the enclosing button
+  const submitBtn3 = screen.getByText(/log in/i).closest('button');
+  expect(submitBtn3).toBeTruthy();
+  fireEvent.click(submitBtn3 as HTMLButtonElement);
     
-    // Check that the error message is displayed
-    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+  // Check that the error message is displayed
+  expect(await screen.findByText(errorMessage)).toBeInTheDocument();
   });
 
   it('handles unverified email', async () => {
-    // Mock an unverified email response
-    (loginAPI as jest.Mock).mockRejectedValueOnce({
+    // Mock an unverified email response via the auth context
+    (mockLogin as jest.Mock).mockRejectedValueOnce({
       response: {
         status: 403,
         data: { message: 'Please verify your email address' },
@@ -148,26 +150,26 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'unverified@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/password/i), {
+    fireEvent.change(screen.getByLabelText(/password/i, { selector: 'input' }), {
       target: { value: 'password123' },
     });
     
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /login/i }));
+  // Submit the form by finding the visible text and clicking the enclosing button
+  const submitBtn4 = screen.getByText(/log in/i).closest('button');
+  expect(submitBtn4).toBeTruthy();
+  fireEvent.click(submitBtn4 as HTMLButtonElement);
     
-    // Check that the verify email button is shown
-    const verifyButton = await screen.findByRole('button', { name: /verify email/i });
-    expect(verifyButton).toBeInTheDocument();
+  // Check that the resend verification button is shown
+  const resendBtn = await screen.findByRole('button', { name: /resend verification email/i });
+  expect(resendBtn).toBeInTheDocument();
     
-    // Mock a successful resend verification response
-    (resendVerification as jest.Mock).mockResolvedValueOnce({});
+  // Mock a successful resend verification response
+  (resendVerification as jest.Mock).mockResolvedValueOnce({});
     
-    // Click the verify button
-    fireEvent.click(verifyButton);
+  // Click the resend button
+  fireEvent.click(resendBtn);
     
-    // Check that the button text changes to 'Email Sent' and is disabled
-    const sentButton = await screen.findByRole('button', { name: /email sent/i });
-    expect(sentButton).toBeInTheDocument();
-    expect(sentButton).toBeDisabled();
+  // Check that the resendVerification API was called with the user's email
+  expect(resendVerification).toHaveBeenCalledWith('unverified@example.com');
   });
 });

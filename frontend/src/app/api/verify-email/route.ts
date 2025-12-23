@@ -14,7 +14,12 @@ export async function GET(request: Request) {
   try {
     // Provide a default API URL if not set
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const verifyUrl = `${apiUrl}/verify-email/?token=${token}`;
+    // Backend verification endpoint is mounted under /api/auth/registration/verify-email/
+    // The NEXT_PUBLIC_API_URL may already include the '/api' suffix (CI or envs).
+    // Build the URL defensively to avoid duplicated '/api' segments.
+    const base = apiUrl.replace(/\/$/, '');
+    const verifyPath = base.match(/\/api$/) ? `${base}/auth/registration/verify-email/` : `${base}/api/auth/registration/verify-email/`;
+    const verifyUrl = `${verifyPath}?token=${encodeURIComponent(token)}`;
 
     
     console.log('Using API URL:', apiUrl);
@@ -45,21 +50,23 @@ export async function GET(request: Request) {
           'Accept': 'application/json',
         },
       });
-      
+
       // Get the response as text first
       responseText = await response.text();
-      
+
       // Try to parse as JSON
       try {
         data = responseText ? JSON.parse(responseText) : {};
       } catch (jsonError) {
         console.error('Failed to parse JSON response. Response was:', responseText);
+        // Return backend status and raw body to surface the root cause (helps debug HTML error pages)
         return NextResponse.json(
-          { 
+          {
             message: 'Invalid JSON response from server',
-            details: responseText.startsWith('<') ? 'Received HTML response instead of JSON' : 'Invalid JSON format'
+            details: responseText || 'Empty response body',
+            backendStatus: response?.status || 502,
           },
-          { status: 500 }
+          { status: response?.status || 502 }
         );
       }
     } catch (error) {

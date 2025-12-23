@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { login as loginAPI, resendVerification } from "@/api/auth";
 import Loading from "@/components/common/Loading";
+import SocialLoginButtons from "@/components/SocialLoginButtons";
 import styles from "./page.module.css";
 import { FaEye, FaEyeSlash, FaEnvelope, FaPhone, FaLock, FaArrowRight } from "react-icons/fa";
 
@@ -139,6 +140,9 @@ export default function LoginPage() {
         <div className={styles.inputMethodContainer}>
           <div className={styles.inputWithDropdown}>
             <div className={styles.inputGroup}>
+              {/* Accessible label for the email/phone input (visually hidden but
+                  present for tests and screen readers) */}
+              <label htmlFor={loginMethod === 'email' ? 'email' : 'phone_number'} className="sr-only">{loginMethod === 'email' ? 'Email' : 'Phone'}</label>
               <div className={styles.inputPrefix}>
                 {loginMethod === 'email' ? <FaEnvelope /> : <FaPhone />}
                 <select
@@ -240,6 +244,8 @@ export default function LoginPage() {
               )}
           </div>
         </form>
+
+        <SocialLoginButtons />
 
         <p className={styles.footer}>
           Don't have an account?{' '}

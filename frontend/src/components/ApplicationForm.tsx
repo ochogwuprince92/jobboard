@@ -3,6 +3,15 @@
 import { useState } from "react";
 import api from "@/lib/api";
 import { useMutation } from "@tanstack/react-query";
+import { AxiosError } from "axios";
+
+interface Application {
+  id: number;
+  job: number;
+  cover_letter: string;
+  created_at: string;
+  status: string;
+}
 
 interface ApplicationFormProps {
   jobId: number;
@@ -11,14 +20,20 @@ interface ApplicationFormProps {
 export default function ApplicationForm({ jobId }: ApplicationFormProps) {
   const [coverLetter, setCoverLetter] = useState("");
 
-  const mutation = useMutation({
-    mutationFn: (data: { job: number; cover_letter: string }) =>
-      api.post("/applications/", data),
+  const mutation = useMutation<
+    Application,
+    AxiosError,
+    { job: number; cover_letter: string }
+  >({
+    mutationFn: async (data) => {
+      const response = await api.post<Application>("/applications/", data);
+      return response.data;
+    },
     onSuccess: () => {
       alert("Application submitted successfully!");
       setCoverLetter("");
     },
-    onError: (err: any) => {
+    onError: (err) => {
       alert("Failed to submit application.");
       console.error(err);
     },
@@ -41,8 +56,8 @@ export default function ApplicationForm({ jobId }: ApplicationFormProps) {
           style={{ width: "100%", marginTop: "0.5rem" }}
         />
       </label>
-      <button type="submit" disabled={mutation.isLoading} style={{ marginTop: "0.5rem" }}>
-        {mutation.isLoading ? "Submitting..." : "Apply"}
+      <button type="submit" disabled={mutation.isPending} style={{ marginTop: "0.5rem" }}>
+        {mutation.isPending ? "Submitting..." : "Apply"}
       </button>
     </form>
   );

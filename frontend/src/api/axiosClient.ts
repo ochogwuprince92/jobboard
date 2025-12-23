@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "ax
 
 // Create axios instance with base URL from environment variables
 const axiosClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
   headers: {
     "Accept": "application/json",
     "Content-Type": "application/json",
@@ -25,10 +25,10 @@ axiosClient.interceptors.request.use(
 
     // Skip auth for these endpoints
     const publicEndpoints = [
-      '/auth/login/',
-      '/auth/registration/',
-      '/auth/password/reset/',
-      '/auth/registration/verify-email/'
+      '/api/auth/login/',
+      '/api/auth/registration/',
+      '/api/auth/password/reset/',
+      '/api/auth/registration/verify-email/'
     ];
 
     if (publicEndpoints.some(endpoint => config.url?.includes(endpoint))) {
@@ -54,7 +54,7 @@ axiosClient.interceptors.request.use(
     // Token is expired, try to refresh it
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/auth/token/refresh/`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/token/refresh/`,
         { refresh: refreshToken },
         {
           headers: {
@@ -97,7 +97,25 @@ const isTokenExpired = (token: string): boolean => {
   }
 };
 
-// Response interceptor with proper typing
+// Response interceptor to handle HTML errors
+axiosClient.interceptors.response.use(
+  (response) => {
+    // Check if we got HTML instead of JSON
+    const contentType = response.headers['content-type'] || '';
+    if (contentType.includes('text/html') && !contentType.includes('application/json')) {
+      throw new Error('Received HTML response instead of JSON. The server might be experiencing issues.');
+    }
+    return response;
+  },
+  (error) => {
+    // Handle network errors
+    if (!error.response) {
+      throw new Error('Network error: Unable to connect to the server');
+    }
+    // Handle other errors
+    return Promise.reject(error);
+  }
+);
 axiosClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Check if the response is HTML (indicates a server-side error page)

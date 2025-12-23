@@ -2,8 +2,8 @@ from rest_framework import viewsets, filters, generics
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination # Import PageNumberPagination
-from .models import Job, JobApplication
-from .serializers import JobSerializer, JobApplicationSerializer
+from .models import Job, JobApplication, SavedJob
+from .serializers import JobSerializer, JobApplicationSerializer, SavedJobSerializer
 from .permissions import IsEmployer, IsApplicantOrReadOnly
 from .filters import JobFilter
 
@@ -32,8 +32,18 @@ class JobViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        
+        # If user is an employer, only show their jobs
+        if self.request.user.is_authenticated and getattr(self.request.user, "is_employer", False):
+            qs = qs.filter(posted_by=self.request.user)
+        
         # Filtering is now handled by DjangoFilterBackend and JobFilter
         return qs
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
 # -----------------------------
 # Job Application ViewSet
@@ -46,6 +56,20 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     search_fields = ["job__title", "applicant__first_name", "applicant__last_name"]
     ordering_fields = ["applied_at", "status"]
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Filter applications based on user role
+        if self.request.user.is_authenticated:
+            if getattr(self.request.user, "is_employer", False):
+                # Employers see applications to their jobs
+                qs = qs.filter(job__posted_by=self.request.user)
+            else:
+                # Job seekers see their own applications
+                qs = qs.filter(applicant=self.request.user)
+        
+        return qs
+
     def get_permissions(self):
         if self.action in ["create"]:
             return [IsAuthenticatedOrReadOnly()]
@@ -56,7 +80,39 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
         serializer.save(applicant=self.request.user)
 
 
+# -----------------------------
+# Saved Job ViewSet
+# -----------------------------
+class SavedJobViewSet(viewsets.ModelViewSet):
+    queryset = SavedJob.objects.all().order_by("-saved_at")
+    serializer_class = SavedJobSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ["job"]
+    search_fields = ["job__title", "job__company__company_name"]
+    ordering_fields = ["saved_at"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        
+        # Users can only see their own saved jobs
+        if self.request.user.is_authenticated:
+            qs = qs.filter(user=self.request.user)
+        
+        return qs
+
+    def get_permissions(self):
+        return [IsAuthenticatedOrReadOnly()]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
 class JobDetailView(generics.RetrieveAPIView):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
     lookup_field = "id"
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context

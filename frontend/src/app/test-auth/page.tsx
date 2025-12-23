@@ -27,8 +27,8 @@ export default function TestAuth() {
     try {
       await register({
         email,
-        password1: password,
-        password2: password,
+        password,
+        confirm_password: password,
         first_name: firstName,
         last_name: lastName,
         phone_number: phoneNumber,

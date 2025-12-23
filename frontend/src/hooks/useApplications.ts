@@ -9,3 +9,11 @@ export const useApplications = () => {
     queryFn: getApplications,
   });
 };
+
+// Hook for user's own applications (filtered by backend based on user role)
+export const useMyApplications = () => {
+  return useQuery({
+    queryKey: ["myApplications"],
+    queryFn: getApplications,
+  });
+};

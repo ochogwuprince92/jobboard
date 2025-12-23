@@ -15,25 +15,29 @@ export default function AuthCallback() {
         // Get the token from the URL
         const access = searchParams.get('access');
         const refresh = searchParams.get('refresh');
-        
+
         if (access && refresh) {
-          // First get user data using the access token
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/user/`, {
-            headers: {
-              'Authorization': `Bearer ${access}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          if (!response.ok) {
-            throw new Error('Failed to fetch user data');
+          // Store tokens
+          localStorage.setItem('access_token', access);
+          localStorage.setItem('refresh_token', refresh);
+
+          // Get user data
+          try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/auth/user/`, {
+              headers: {
+                'Authorization': `Bearer ${access}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (response.ok) {
+              const userData = await response.json();
+              // Update auth context with user data if needed
+            }
+          } catch (error) {
+            console.warn('Could not fetch user data:', error);
           }
-          
-          const userData = await response.json();
-          
-          // Store tokens and update auth state with user data
-          await login(access, refresh, userData);
-          
+
           // Redirect to dashboard
           router.push('/dashboard');
         } else {

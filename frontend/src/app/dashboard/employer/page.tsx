@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardNav from "@/components/DashboardNav";
 import JobCard from "@/components/JobCard";
 
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary?: string;
-}
+import type { Job } from '@/types';
 
 export default function EmployerDashboard() {
   const [postedJobs, setPostedJobs] = useState<Job[]>([]);
@@ -32,7 +25,19 @@ export default function EmployerDashboard() {
     <div>
       <DashboardNav role="employer" />
       <h2>Posted Jobs</h2>
-      {postedJobs.map((job) => <JobCard key={job.id} {...job} />)}
+      {postedJobs.map((job) => (
+        <JobCard
+          key={job.id}
+          id={job.id}
+          title={job.title}
+          company={job.company}
+          company_name={job.company_name}
+          location={job.location}
+          salary={job.salary}
+          employment_type={job.employment_type}
+          remote={job.remote}
+        />
+      ))}
     </div>
   );
 }

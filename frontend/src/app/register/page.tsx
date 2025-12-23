@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { register as registerAPI } from "@/api/auth";
 import type { RegisterData } from "@/types";
 import Loading from "@/components/common/Loading";
+import SocialLoginButtons from "@/components/SocialLoginButtons";
 import styles from "./register.module.css";
 import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaPhone, FaLock, FaBriefcase, FaUserTie } from "react-icons/fa";
 
@@ -16,9 +17,10 @@ export default function RegisterPage() {
     email: "",
     phone_number: "",
     password: "",
+    confirm_password: "",
     is_employer: false,
   });
-  const [confirmPassword, setConfirmPassword] = useState("");
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -58,7 +60,7 @@ export default function RegisterPage() {
     setError("");
 
     // Validate password match
-    if (form.password !== confirmPassword) {
+    if (form.password !== form.confirm_password) {
       setError("Passwords do not match");
       return;
     }
@@ -72,20 +74,27 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await registerAPI(form);
+      // Call the register API and get both user and message
+      const response = await registerAPI(form);
       setSuccess(true);
+      
+      // Show success message with the server's message
       setTimeout(() => {
         router.push("/login");
       }, 2000);
     } catch (err: any) {
-      const errorData = err.response?.data;
+      // Prefer detailed backend validation messages when available
+      const errorData = err?.response?.data;
       if (errorData?.errors) {
         const errorMessages = Object.entries(errorData.errors)
           .map(([key, value]) => `${key}: ${value}`)
           .join(", ");
         setError(errorMessages);
+      } else if (errorData) {
+        setError(errorData.detail || errorData.error || JSON.stringify(errorData) || err?.message || "Registration failed");
       } else {
-        setError(errorData?.detail || errorData?.error || "Registration failed");
+        // Fall back to thrown error message
+        setError(err?.message || "Registration failed");
       }
     } finally {
       setLoading(false);
@@ -230,8 +239,8 @@ export default function RegisterPage() {
                 name="confirm_password"
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder=" "
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                value={form.confirm_password}
+                onChange={handlePasswordChange}
                 required
                 minLength={8}
                 className={`${styles.input} ${styles.passwordInput}`}
@@ -273,6 +282,8 @@ export default function RegisterPage() {
             {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
+
+        <SocialLoginButtons />
 
         <p className={styles.footer}>
           Already have an account?{" "}

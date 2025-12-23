@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 
+
 # -----------------------------
 # Job Tag
 # -----------------------------
@@ -9,6 +10,7 @@ class JobTag(models.Model):
 
     def __str__(self):
         return self.name
+
 
 # -----------------------------
 # Job Model
@@ -27,12 +29,18 @@ class Job(models.Model):
     ]
 
     title = models.CharField(max_length=200)
-    company = models.ForeignKey("employers.Employer", on_delete=models.CASCADE, related_name="jobs") # Link to Employer model
+    company = models.ForeignKey(
+        "employers.Employer", on_delete=models.CASCADE, related_name="jobs"
+    )  # Link to Employer model
     location = models.CharField(max_length=100)
     description = models.TextField()
     requirements = models.TextField()
-    min_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) # Min salary
-    max_salary = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True) # Max salary
+    min_salary = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )  # Min salary
+    max_salary = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )  # Max salary
     employment_type = models.CharField(max_length=20, choices=EMPLOYMENT_TYPE_CHOICES)
     posted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     tags = models.ManyToManyField(JobTag, blank=True)
@@ -41,6 +49,7 @@ class Job(models.Model):
 
     def __str__(self):
         return f"{self.title} at {self.company}"
+
 
 # -----------------------------
 # Job Application Model
@@ -70,3 +79,20 @@ class JobApplication(models.Model):
 
     def __str__(self):
         return f"{self.applicant} -> {self.job}"
+
+
+# -----------------------------
+# Saved Job Model
+# -----------------------------
+class SavedJob(models.Model):
+    job = models.ForeignKey(Job, on_delete=models.CASCADE, related_name="saved_by")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="saved_jobs"
+    )
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("job", "user")  # Prevent duplicate saves
+
+    def __str__(self):
+        return f"{self.user} saved {self.job}"

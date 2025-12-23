@@ -1,8 +1,13 @@
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+
 
 # -----------------------------
 # Custom User Manager
@@ -12,6 +17,7 @@ class UserManager(BaseUserManager):
     Custom manager for User model to handle creation of users and superusers.
     Supports email or phone number for authentication.
     """
+
     def create_user(self, email=None, phone_number=None, password=None, **extra_fields):
         """
         Create a standard user.
@@ -33,10 +39,21 @@ class UserManager(BaseUserManager):
 
         # Raise error if user exists
         if existing_user:
-            if email and existing_user.email and existing_user.email.lower() == email.lower():
+            if (
+                email
+                and existing_user.email
+                and existing_user.email.lower() == email.lower()
+            ):
                 raise ValueError("A user with this email already exists.")
             if phone_number and existing_user.phone_number == phone_number:
                 raise ValueError("A user with this phone number already exists.")
+
+        # Generate username if not provided (for allauth compatibility)
+        if not extra_fields.get("username"):
+            if email:
+                extra_fields["username"] = email
+            elif phone_number:
+                extra_fields["username"] = phone_number
 
         # Create and save user
         user = self.model(email=email, phone_number=phone_number, **extra_fields)
@@ -60,6 +77,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     """
     Custom user model that supports email or phone authentication.
     """
+
+    username = models.CharField(
+        max_length=150, unique=True, null=True, blank=True
+    )  # Add for allauth compatibility
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(unique=True, null=True, blank=True)
@@ -95,10 +116,12 @@ def get_default_expiry():
     """Calculate default OTP expiration based on settings."""
     return timezone.now() + timedelta(minutes=settings.OTP_EXPIRATION_MINUTES)
 
+
 class EmailOTP(models.Model):
     """
     Stores one-time passwords (OTP) for email/phone verification and password reset.
     """
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     otp = models.CharField(max_length=128)  # Hashed OTP
     purpose = models.CharField(max_length=50)  # Example: register, reset_password

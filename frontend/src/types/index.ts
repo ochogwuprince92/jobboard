@@ -21,28 +21,38 @@ export interface LoginResponse {
 
 export interface RegisterData {
   email: string;
-  phone_number: string;
+  phone_number?: string;  // Optional since we allow either email or phone
   first_name: string;
   last_name: string;
-  password: string;
-  is_employer: boolean;
+  password: string;       // Updated to match API
+  confirm_password: string;  // Updated to match API
+  is_employer?: boolean;  // Optional since it's not required for registration
 }
 
 // Job Types
 export interface Job {
-  id: number;
+  id: number | string;  // API returns number, but we often use string in URLs/components
   title: string;
   company: Employer;
+  company_name?: string;  // For list views where full Employer object isn't needed
   location: string;
   description: string;
   requirements: string;
+  salary?: string;  // Formatted salary string for display
   min_salary?: number;
   max_salary?: number;
   employment_type: 'full-time' | 'part-time' | 'contract' | 'internship';
+  remote?: boolean;  // Whether this is a remote position
+  type?: string;     // Legacy/display type field
   posted_by: number;
   tags: JobTag[];
   is_active: boolean;
   posted_at: string;
+  postedDate?: string;  // Formatted date for display
+  // Additional fields from API/components
+  results?: Job[];      // For paginated responses
+  employer?: string;    // For filtering
+  status?: string;      // For application status
 }
 
 export interface JobTag {
@@ -84,6 +94,7 @@ export interface Application {
   applied_at: string;
   applicant_name?: string;
   job_title?: string;
+  company_name?: string;
 }
 
 // Notification Types
