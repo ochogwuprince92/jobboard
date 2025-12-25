@@ -19,7 +19,7 @@ export default function JobsPage() {
   const [page, setPage] = useState(1);
 
   const fetchJobs = async () => {
-    const params = new URLSearchParams({ page: page.toString(), ...filters as any });
+    const params = new URLSearchParams({ page: page.toString(), ...filters as Record<string, string> });
     const res = await fetch(`/api/jobs/?${params.toString()}`);
     return res.json();
   };

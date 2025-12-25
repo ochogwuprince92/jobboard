@@ -17,7 +17,12 @@ export const applyJob = async (data: ApplyJobData): Promise<Application> => {
   return response.data;
 };
 
-export const getApplicationById = async (id: number): Promise<Application> => {
-  const response = await axiosClient.get(`/applications/${id}/`);
+export const updateApplicationStatus = async (id: number, status: string): Promise<Application> => {
+  const response = await axiosClient.patch(`/applications/${id}/`, { status });
+  return response.data;
+};
+
+export const withdrawApplication = async (id: number): Promise<void> => {
+  const response = await axiosClient.delete(`/applications/${id}/`);
   return response.data;
 };

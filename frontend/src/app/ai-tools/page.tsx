@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import ResumeParser from '@/components/ai/ResumeParser';
 import styles from './page.module.css';
 
@@ -44,11 +45,11 @@ export default function AIToolsPage() {
               <h2>🎯 Job Matcher</h2>
               <p>
                 The Job Matcher is available on individual job pages.
-                Browse jobs and click "Check Match Score" to see how well your resume matches!
+                Browse jobs and click &quot;Check Match Score&quot; to see how well your resume matches!
               </p>
-              <a href="/jobs" className={styles.browseButton}>
+              <Link href="/jobs" className={styles.browseButton}>
                 Browse Jobs
-              </a>
+              </Link>
             </div>
           </div>
         )}

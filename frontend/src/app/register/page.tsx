@@ -75,14 +75,14 @@ export default function RegisterPage() {
 
     try {
       // Call the register API and get both user and message
-      const response = await registerAPI(form);
+      await registerAPI(form);
       setSuccess(true);
       
       // Show success message with the server's message
       setTimeout(() => {
         router.push("/login");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Prefer detailed backend validation messages when available
       const errorData = err?.response?.data;
       if (errorData?.errors) {

@@ -1,11 +1,10 @@
 import axios from 'axios';
-import axiosClient from './axiosClient';
 
 interface SocialResponse {
   access?: string;
   refresh?: string;
-  user?: any;
-  [key: string]: any;
+  user?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /**
@@ -31,9 +30,10 @@ export async function socialLogin(provider: string, code: string, redirectUri?: 
     }
 
     return response.data as SocialResponse;
-  } catch (error: any) {
-    if (error.response?.data) {
-      const msg = error.response.data?.detail || error.response.data?.error || error.response.data?.message || 'Social login failed';
+  } catch (error) {
+    if ((error as { response?: { data?: { detail?: string; error?: string; message?: string } } })?.response?.data) {
+      const errorResponse = (error as { response: { data: { detail?: string; error?: string; message?: string } } }).response.data;
+      const msg = errorResponse?.detail || errorResponse?.error || errorResponse?.message || 'Social login failed';
       throw new Error(String(msg));
     }
     throw error;

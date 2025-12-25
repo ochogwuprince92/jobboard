@@ -34,7 +34,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <div className={styles.icon}>⚠️</div>
             <h1 className={styles.title}>Oops! Something went wrong</h1>
             <p className={styles.message}>
-              We're sorry for the inconvenience. Please try refreshing the page.
+              We&apos;re sorry for the inconvenience. Please try refreshing the page.
             </p>
             {this.state.error && (
               <details className={styles.details}>

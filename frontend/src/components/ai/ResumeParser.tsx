@@ -22,8 +22,8 @@ export default function ResumeParser() {
     try {
       const result = await parseResume(resumeText);
       setParsedData(result);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to parse resume');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to parse resume');
     } finally {
       setLoading(false);
     }

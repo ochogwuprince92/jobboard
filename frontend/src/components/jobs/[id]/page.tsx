@@ -18,7 +18,7 @@ export default function JobDetailPage() {
     try {
       await applyMutation.mutateAsync({ job_id: id, ...form });
       alert("Application submitted successfully!");
-    } catch (err) {
+    } catch (_err) {
       alert("Failed to apply. Please try again.");
     }
   };

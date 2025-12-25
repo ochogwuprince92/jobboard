@@ -31,7 +31,7 @@ export interface AuthTokens {
 
 interface ErrorResponse {
   detail?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -39,7 +39,7 @@ interface ErrorResponse {
  */
 export const login = async (data: LoginData): Promise<LoginResponse> => {
   try {
-    const loginData: any = { password: data.password };
+    const loginData: Record<string, string> = { password: data.password };
     
     // Use email or phone_number based on what's provided
     if (data.email) {
@@ -58,7 +58,7 @@ export const login = async (data: LoginData): Promise<LoginResponse> => {
       `${base.replace(/\/$/, '')}/api/auth/login/`
     ];
 
-    let rawResponse: any = null;
+    let rawResponse: { status: number; data: unknown } | null = null;
     for (const url of candidates) {
       try {
         rawResponse = await axios.post(url, loginData, {
@@ -74,7 +74,7 @@ export const login = async (data: LoginData): Promise<LoginResponse> => {
         // If this endpoint returned anything other than a network error,
         // stop trying other candidates.
         if (rawResponse) break;
-      } catch (e) {
+      } catch {
         // Try next candidate
         rawResponse = null;
       }
@@ -85,38 +85,40 @@ export const login = async (data: LoginData): Promise<LoginResponse> => {
     }
 
     const status = rawResponse.status;
-    const responseData = rawResponse.data;
+    const responseData = rawResponse.data as unknown;
 
     // Handle 4xx errors with backend-provided messages
     if (status >= 400 && status < 500) {
       // Prefer common DRF-style fields
-      const errMsg = responseData?.error || responseData?.detail || (Array.isArray(responseData?.non_field_errors) ? responseData.non_field_errors[0] : undefined) || responseData?.message || responseData || 'Invalid credentials. Please try again.';
+      const data = responseData as Record<string, unknown>;
+      const errMsg = data?.error || data?.detail || (Array.isArray(data?.non_field_errors) ? data.non_field_errors[0] : undefined) || data?.message || responseData || 'Invalid credentials. Please try again.';
       throw new Error(String(errMsg));
     }
 
     // 2xx success — expect tokens
     if (status >= 200 && status < 300 && responseData && typeof responseData === 'object') {
-      if (responseData.access && responseData.refresh) {
-        let userObj: any = responseData.user;
+      const data = responseData as Record<string, unknown>;
+      if (data.access && data.refresh) {
+        let userObj: User | null = (data as { user?: User }).user || null;
         if (!userObj) {
           // Fetch user via axiosClient (which adds auth header if available)
           try {
-            const userResponse: any = await axiosClient.get('/auth/user/', {
+            const userResponse = await axiosClient.get('/auth/user/', {
               headers: {
-                'Authorization': `Bearer ${responseData.access}`,
+                'Authorization': `Bearer ${data.access as string}`,
                 'Accept': 'application/json'
               }
             });
-            userObj = userResponse;
-          } catch (uErr: any) {
+            userObj = userResponse.data as User;
+          } catch (uErr) {
             console.error('Failed to fetch user after login:', uErr);
             throw new Error('Logged in but failed to fetch user profile. Please try again.');
           }
         }
 
         return {
-          access: responseData.access,
-          refresh: responseData.refresh,
+          access: data.access as string,
+          refresh: data.refresh as string,
           user: userObj as User
         };
       }
@@ -124,13 +126,14 @@ export const login = async (data: LoginData): Promise<LoginResponse> => {
 
     // Any other shape is unexpected
     throw new Error('Invalid response from server.');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error);
     // If this error is an axios-style error with response, extract message
-    if (error.response) {
-      const errorData: ErrorResponse = error.response.data || {};
+    const axiosError = error as { response?: { data?: unknown } };
+    if (axiosError.response) {
+      const errorData = (axiosError.response.data as ErrorResponse) || {};
       const errorMessage = errorData.detail ||
-                         (errorData.non_field_errors && errorData.non_field_errors[0]) ||
+                         (Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length > 0 && errorData.non_field_errors[0]) ||
                          'Invalid credentials. Please try again.';
       throw new Error(errorMessage);
     }
@@ -138,8 +141,9 @@ export const login = async (data: LoginData): Promise<LoginResponse> => {
     // If a plain Error was thrown earlier with a useful message (e.g., we
     // constructed it when parsing a 4xx), preserve that message instead of
     // replacing it with a generic network error.
-    if (error?.message && typeof error.message === 'string' && error.message.length > 0) {
-      throw new Error(error.message);
+    const errorObj = error as { message?: string };
+    if (errorObj?.message && typeof errorObj.message === 'string' && errorObj.message.length > 0) {
+      throw new Error(errorObj.message);
     }
 
     throw new Error('Unable to connect to the server. Please check your connection.');
@@ -165,13 +169,13 @@ export const register = async (data: RegisterFormData): Promise<RegisterResponse
     
     console.log('Registration data being sent:', JSON.stringify(registrationData, null, 2));
     
-    const response: any = await axiosClient.post("/auth/registration/", registrationData, {
+    const response = await axiosClient.post("/auth/registration/", registrationData, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
       },
       // Don't throw on non-200 responses, let us handle them
-      validateStatus: (status) => true
+      validateStatus: () => true
     });
 
     console.log('Raw registration response:', response);
@@ -196,7 +200,7 @@ export const register = async (data: RegisterFormData): Promise<RegisterResponse
 
       const errors = possibleErrorFields
         .map(field => {
-          const value = (parsed as any)[field];
+          const value = (parsed as Record<string, unknown>)[field];
           if (value) {
             return Array.isArray(value) ? value[0] : String(value);
           }
@@ -206,8 +210,8 @@ export const register = async (data: RegisterFormData): Promise<RegisterResponse
 
       if (errors.length > 0 && !parsed.user && !parsed.access) {
         // Attach the backend response to the error so callers can inspect it
-        const err: any = new Error(errors[0]);
-        err.response = { data: parsed };
+        const err = new Error(errors[0]);
+        (err as Error & { response: { data: unknown } }).response = { data: parsed };
         throw err;
       }
 
@@ -229,14 +233,14 @@ export const register = async (data: RegisterFormData): Promise<RegisterResponse
 
       // Case 3: Response has tokens (legacy format)
       if (parsed.access && parsed.refresh) {
-        const userResponse: any = await axiosClient.get("/auth/user/", {
+        const userResponse = await axiosClient.get("/auth/user/", {
           headers: {
             'Authorization': `Bearer ${parsed.access}`,
             'Accept': 'application/json'
           }
         });
         return {
-          user: userResponse as User,
+          user: userResponse.data as User,
           message: 'Registration successful.'
         };
       }
@@ -255,26 +259,27 @@ export const register = async (data: RegisterFormData): Promise<RegisterResponse
       message: 'Registration successful. Please check your email to verify your account.'
     };
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Registration error:', error);
     console.error('Full error details:', JSON.stringify(error, null, 2));
     
     // If we have a response with data, try to extract a meaningful error message
-    if (error.response?.data) {
-      const errorData: ErrorResponse = error.response.data;
+    const axiosError = error as { response?: { data?: unknown } };
+    if (axiosError.response?.data) {
+      const errorData = axiosError.response.data as ErrorResponse;
       console.log('Backend error response:', JSON.stringify(errorData, null, 2));
 
       // Try to extract error message in order of priority
       const errorMessage = 
         errorData.detail ||
         errorData.error ||
-        (errorData.email && `Email: ${errorData.email[0]}`) ||
-        (errorData.phone_number && `Phone: ${errorData.phone_number[0]}`) ||
-        (errorData.password && `Password: ${errorData.password[0]}`) ||
-        (errorData.confirm_password && `Confirm password: ${errorData.confirm_password[0]}`) ||
-        (errorData.non_field_errors && errorData.non_field_errors[0]) ||
+        (Array.isArray(errorData.email) && `Email: ${errorData.email[0]}`) ||
+        (Array.isArray(errorData.phone_number) && `Phone: ${errorData.phone_number[0]}`) ||
+        (Array.isArray(errorData.password) && `Password: ${errorData.password[0]}`) ||
+        (Array.isArray(errorData.confirm_password) && `Confirm password: ${errorData.confirm_password[0]}`) ||
+        (Array.isArray(errorData.non_field_errors) && errorData.non_field_errors[0]) ||
         Object.entries(errorData)
-          .filter(([key, value]) => value && typeof value !== 'object')
+          .filter(([, value]) => value && typeof value !== 'object')
           .map(([key, value]) => `${key}: ${value}`)
           .join(', ') ||
         'Registration failed. Please check your information and try again.';
@@ -283,12 +288,14 @@ export const register = async (data: RegisterFormData): Promise<RegisterResponse
     }
     
     // If we got here with a response but no data, it's probably a network error
-    if (error.response) {
-      throw new Error(`Server error: ${error.response.status}. Please try again.`);
+    if (axiosError.response) {
+      const status = (axiosError.response as { status?: number }).status;
+      throw new Error(`Server error: ${status}. Please try again.`);
     }
     
     // If the error has a message (e.g., from our validation), use it
-    if (error.message) {
+    const errorObj = error as { message?: string };
+    if (errorObj.message) {
       throw error;
     }
     
@@ -308,9 +315,9 @@ export const forgotPassword = async (email: string): Promise<void> => {
         'Content-Type': 'application/json'
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Forgot password error:', error);
-    const errorData: ErrorResponse = error.response?.data || {};
+    const errorData: ErrorResponse = (error as { response?: { data?: ErrorResponse } })?.response?.data || {};
     throw new Error(errorData.detail || 'Failed to send password reset email. Please try again.');
   }
 };
@@ -333,9 +340,9 @@ export const resetPassword = async (data: ResetPasswordData): Promise<void> => {
         'Content-Type': 'application/json'
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Reset password error:', error);
-    const errorData: ErrorResponse = error.response?.data || {};
+    const errorData: ErrorResponse = (error as { response?: { data?: ErrorResponse } })?.response?.data || {};
     throw new Error(errorData.detail || 'Failed to reset password. Please try again.');
   }
 };
@@ -345,7 +352,7 @@ export const resetPassword = async (data: ResetPasswordData): Promise<void> => {
  */
 export const refreshToken = async (refreshToken: string): Promise<AuthTokens> => {
   try {
-    const response: any = await axiosClient.post(
+    const response = await axiosClient.post(
       "/auth/token/refresh/",
       { refresh: refreshToken },
       {
@@ -357,7 +364,7 @@ export const refreshToken = async (refreshToken: string): Promise<AuthTokens> =>
     );
     // axiosClient returns parsed data
     return {
-      access: (response as any).access,
+      access: (response.data as { access: string }).access,
       refresh: refreshToken // The refresh token remains the same
     };
   } catch (error) {
@@ -371,14 +378,14 @@ export const refreshToken = async (refreshToken: string): Promise<AuthTokens> =>
  */
 export const getCurrentUser = async (accessToken: string): Promise<User> => {
   try {
-    const response: any = await axiosClient.get("/auth/user/", {
+    const response = await axiosClient.get("/auth/user/", {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Accept': 'application/json'
       }
     });
     // axiosClient returns parsed data
-    return response as User;
+    return response.data as User;
   } catch (error) {
     console.error('Get current user error:', error);
     throw new Error('Failed to fetch user data. Please log in again.');
@@ -400,9 +407,9 @@ export const verifyEmail = async (key: string): Promise<void> => {
         }
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Email verification error:', error);
-    const errorData: ErrorResponse = error.response?.data || {};
+    const errorData: ErrorResponse = (error as { response?: { data?: ErrorResponse } })?.response?.data || {};
     throw new Error(errorData.detail || 'Failed to verify email. The link may be invalid or expired.');
   }
 };
@@ -442,9 +449,9 @@ export const resendVerification = async (email: string): Promise<void> => {
         }
       }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error('Resend verification error:', error);
-    const errorData: ErrorResponse = error.response?.data || {};
+    const errorData: ErrorResponse = (error as { response?: { data?: ErrorResponse } })?.response?.data || {};
     throw new Error(errorData.detail || 'Failed to resend verification email. Please try again.');
   }
 };

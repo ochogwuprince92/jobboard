@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEmployerJobs } from "@/hooks/useJobs";
 import { useApplications } from "@/hooks/useApplications";
+import { Job } from "@/types";
 import { FaBriefcase, FaUsers, FaPlus, FaEye } from "react-icons/fa";
 
 export default function EmployerDashboard() {
@@ -104,7 +105,7 @@ export default function EmployerDashboard() {
 
         {jobs?.length ? (
           <div className="space-y-4">
-            {jobs.slice(0, 5).map((job: any) => (
+            {jobs.slice(0, 5).map((job: Job) => (
               <div
                 key={job.id}
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
@@ -141,7 +142,7 @@ export default function EmployerDashboard() {
         ) : (
           <div className="text-center py-8">
             <FaBriefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">You haven't posted any jobs yet.</p>
+            <p className="text-gray-600 mb-4">You haven&apos;t posted any jobs yet.</p>
             <Link
               href="/jobs/create"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

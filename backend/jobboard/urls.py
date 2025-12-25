@@ -54,6 +54,7 @@ urlpatterns = [
                 path("", include("resumes.urls", namespace="resumes")),
                 path("", include("scraper.urls", namespace="scraper")),
                 path("", include("ai.urls", namespace="ai")),
+                path("", include("notifications.urls", namespace="notifications")),
             ]
         ),
     ),

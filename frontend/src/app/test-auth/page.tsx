@@ -17,8 +17,8 @@ export default function TestAuth() {
     try {
       await login({ email, password });
       alert("Login successful!");
-    } catch (error: any) {
-      alert(`Login failed: ${error.message}`);
+    } catch (error: unknown) {
+      alert(`Login failed: ${(error as Error).message}`);
     }
   };
 
@@ -35,8 +35,8 @@ export default function TestAuth() {
       });
       alert("Registration successful! Please check your email to verify your account.");
       setIsLogin(true);
-    } catch (error: any) {
-      alert(`Registration failed: ${error.message}`);
+    } catch (error: unknown) {
+      alert(`Registration failed: ${(error as Error).message}`);
     }
   };
 
@@ -95,7 +95,7 @@ export default function TestAuth() {
             Login
           </button>
           <p style={styles.toggleText}>
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <button 
               type="button" 
               onClick={toggleAuthMode}

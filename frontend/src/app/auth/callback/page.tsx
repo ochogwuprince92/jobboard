@@ -31,7 +31,7 @@ export default function AuthCallback() {
             });
 
             if (response.ok) {
-              const userData = await response.json();
+              await response.json();
               // Update auth context with user data if needed
             }
           } catch (error) {

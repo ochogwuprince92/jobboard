@@ -1,7 +1,7 @@
 import axiosClient from "./axiosClient";
 import type { Job, PaginatedResponse } from "@/types";
 
-export const getJobs = async (params?: any): Promise<PaginatedResponse<Job>> => {
+export const getJobs = async (params?: Record<string, unknown>): Promise<PaginatedResponse<Job>> => {
   const response = await axiosClient.get("/jobs/", { params });
   return response.data;
 };

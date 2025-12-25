@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 import type { User } from "@/types";
 import { 
   login as apiLogin, 
@@ -22,7 +22,7 @@ interface DecodedToken {
   user_id: number;
   email: string;
   exp: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface RegisterResponse {
@@ -62,22 +62,11 @@ const clearAuthData = () => {
 };
 
 export const AuthProvider = ({ children, skipInitialLoad }: { children: ReactNode; skipInitialLoad?: boolean }) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  // `useRouter` requires Next's app router to be mounted; in test
-  // environments it can throw. Wrap in try/catch and provide a
-  // no-op fallback so unit tests can render this provider.
-  let router;
-  try {
-    router = useRouter();
-  } catch (e) {
-    // Provide a minimal router shim for tests
-    // Only `push` is used by this context.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router = { push: (_: string) => {} } as any;
-  }
 
   // Load user from storage on mount. Tests can opt-out of network refreshes
   // by passing `skipInitialLoad={true}` to the provider. We also keep the
@@ -153,7 +142,7 @@ export const AuthProvider = ({ children, skipInitialLoad }: { children: ReactNod
       setUser(user);
       
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
       
       // Handle specific error cases
@@ -277,7 +266,7 @@ export const AuthProvider = ({ children, skipInitialLoad }: { children: ReactNod
   const isAuthenticated = !!accessToken && !!user && !isTokenExpired(accessToken);
 
   // Memoize the token management functions to maintain stable references
-  const handleTokenRefresh = useCallback(async (config: any) => {
+  const handleTokenRefresh = useCallback(async (config: AxiosRequestConfig) => {
     const newToken = await refreshAccessToken();
     if (newToken) {
       config.headers.Authorization = `Bearer ${newToken}`;
@@ -287,7 +276,7 @@ export const AuthProvider = ({ children, skipInitialLoad }: { children: ReactNod
     return Promise.reject(new Error('Session expired'));
   }, [refreshAccessToken, logout]);
 
-  const handleAuthHeader = useCallback((config: any) => {
+  const handleAuthHeader = useCallback((config: AxiosRequestConfig) => {
     if (!config.headers) {
       config.headers = {};
     }
@@ -314,7 +303,7 @@ export const AuthProvider = ({ children, skipInitialLoad }: { children: ReactNod
     return config;
   }, [accessToken, handleTokenRefresh]);
 
-  const handle401Response = useCallback(async (error: any) => {
+  const handle401Response = useCallback(async (error: unknown) => {
     const originalRequest = error.config;
 
     // If error is 401 and we haven't retried yet

@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { getJobs, getJobById, applyForJob } from "@/api/jobs";
+import { getJobs, getJobById } from "@/api/jobs";
+import axiosClient from "@/api/axiosClient";
 import type { Job } from "@/types";
 
 export const useJobs = () => {
@@ -30,16 +31,13 @@ export const useEmployerJobs = () => {
 // Hook for applying to jobs
 export const useApplyForJob = () => {
   const mutation = useMutation({
-    mutationFn: async ({ jobId, ...data }: { jobId: string | number } & Record<string, any>) => {
-      const response = await fetch(`/api/jobs/${jobId}/apply`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+    mutationFn: async ({ jobId, resumeId, coverLetter }: { jobId: number; resumeId: number; coverLetter?: string }) => {
+      const response = await axiosClient.post("/applications/", {
+        job: jobId,
+        resume: resumeId,
+        cover_letter: coverLetter
       });
-      if (!response.ok) {
-        throw new Error('Failed to apply for job');
-      }
-      return response.json();
+      return response.data;
     }
   });
 

@@ -3,8 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { login as loginAPI, resendVerification } from "@/api/auth";
-import Loading from "@/components/common/Loading";
+import { resendVerification } from "@/api/auth";
 import SocialLoginButtons from "@/components/SocialLoginButtons";
 import styles from "./page.module.css";
 import { FaEye, FaEyeSlash, FaEnvelope, FaPhone, FaLock, FaArrowRight } from "react-icons/fa";
@@ -35,9 +34,9 @@ export default function LoginPage() {
     try {
       await resendVerification(form.email);
       setResendStatus("sent");
-    } catch (err: any) {
+    } catch (err) {
       setResendStatus("error");
-      setError(err.response?.data?.message || "Failed to resend verification email.");
+      setError((err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to resend verification email.");
     }
   };
 
@@ -85,7 +84,7 @@ export default function LoginPage() {
       const identifier = loginMethod === 'email' ? form.email! : form.phone_number!;
       
       // Call the login function from useAuth which will handle the API call and state management
-      const loginData = await login({
+      await login({
         [loginMethod === 'email' ? 'email' : 'phone_number']: identifier,
         password: form.password
       });
@@ -94,18 +93,18 @@ export default function LoginPage() {
       // Use router.push for client-side navigation
       router.push('/dashboard');
       
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error);
       
-      if (error.response?.data?.code === "email_not_verified") {
+      if ((error as { response?: { data?: { code?: string } } })?.response?.data?.code === "email_not_verified") {
         setError("Please verify your email before logging in.");
         setResendStatus("idle");
       } else {
         let errorMessage = "An error occurred during login. Please try again.";
       
-      if (error.response) {
+      if ((error as { response?: { data?: { code?: string } } })?.response) {
         // Handle specific error responses from the server
-        const { data } = error.response;
+        const { data } = (error as { response: { data: { detail?: string; error?: string; non_field_errors?: string | string[]; message?: string } } }).response;
         
         if (data.detail) {
           errorMessage = data.detail;
@@ -116,12 +115,12 @@ export default function LoginPage() {
         } else if (data.message) {
           errorMessage = data.message;
         }
-      } else if (error.request) {
+      } else if ((error as { request?: unknown })?.request) {
         // The request was made but no response was received
         errorMessage = "No response from server. Please check your connection.";
       } else {
         // Something happened in setting up the request
-        errorMessage = error.message || "An unknown error occurred";
+        errorMessage = (error as { message?: string })?.message || "An unknown error occurred";
       }
       
       console.error("Login error:", error);
@@ -248,7 +247,7 @@ export default function LoginPage() {
         <SocialLoginButtons />
 
         <p className={styles.footer}>
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <a href="/register" className={styles.link}>
             Sign up
           </a>

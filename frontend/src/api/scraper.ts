@@ -28,7 +28,7 @@ export const triggerScraping = async (
   location?: string,
   async: boolean = false
 ): Promise<TriggerScrapingResponse> => {
-  const params: any = {};
+  const params: Record<string, string> = {};
   if (keyword) params.keyword = keyword;
   if (location) params.location = location;
   if (async) params.async = "true";
@@ -41,14 +41,16 @@ export const triggerScraping = async (
  * Get list of scraped jobs
  */
 export const getScrapedJobs = async (source?: string): Promise<ScrapedJob[]> => {
-  const params: any = {};
+  const params: Record<string, string> = {};
   if (source) params.source = source;
 
   const response = await axiosClient.get("/scraped-jobs/", { params });
   return response.data;
 };
 
-export default {
+const scraperAPI = {
   triggerScraping,
   getScrapedJobs,
 };
+
+export default scraperAPI;

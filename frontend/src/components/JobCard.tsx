@@ -14,6 +14,7 @@ interface JobCardProps {
   min_salary?: number;
   max_salary?: number;
   employment_type?: string;
+  remote?: boolean;
   posted_at?: string;
   tags?: Array<{ id: number; name: string }>;
 }
@@ -40,6 +41,7 @@ export default function JobCard(props: JobCardProps) {
     min_salary,
     max_salary,
     employment_type,
+    remote,
     posted_at,
     tags,
   } = props;
@@ -69,6 +71,14 @@ export default function JobCard(props: JobCardProps) {
               <div className="flex items-center">
                 <FaBriefcase className="mr-1" />
                 {employment_type}
+              </div>
+            )}
+
+            {remote && (
+              <div className="flex items-center">
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                  Remote
+                </span>
               </div>
             )}
 
@@ -115,14 +125,6 @@ export default function JobCard(props: JobCardProps) {
           </Link>
         </div>
       </div>
-    </div>
-  );
-}
-      <Link href={`/jobs/${id}`}>
-        <button style={{ marginTop: "0.5rem", padding: "0.5rem 1rem", borderRadius: "4px", background: "#b2ffb2", border: "none" }}>
-          View Details
-        </button>
-      </Link>
     </div>
   );
 }

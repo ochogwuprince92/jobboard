@@ -1,8 +1,11 @@
 import axios from 'axios';
 import * as auth from '../auth';
+import axiosClient from '../axiosClient';
 
+// Mock axios
 jest.mock('axios');
-// Provide a manual mock for axiosClient to avoid accessing interceptors during tests
+
+// Mock axiosClient
 jest.mock('../axiosClient', () => ({
   __esModule: true,
   default: {
@@ -12,7 +15,10 @@ jest.mock('../axiosClient', () => ({
 }));
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockedAxiosClient = require('../axiosClient').default as jest.Mocked<any>;
+const mockedAxiosClient = axiosClient as jest.Mocked<{
+  get: jest.MockedFunction<() => Promise<unknown>>;
+  post: jest.MockedFunction<() => Promise<unknown>>;
+}>;
 
 describe('auth API', () => {
   afterEach(() => {
@@ -43,7 +49,7 @@ describe('auth API', () => {
   describe('register', () => {
     it('returns message and user when backend provides both', async () => {
       const resp = { message: 'ok', user: { id: 2, email: 'b@b.com' } };
-      mockedAxiosClient.post.mockResolvedValueOnce(resp as any);
+      mockedAxiosClient.post.mockResolvedValueOnce(resp);
 
       const result = await auth.register({
         email: 'b@b.com',
@@ -52,7 +58,7 @@ describe('auth API', () => {
         last_name: 'B',
         password: 'pw',
         confirm_password: 'pw'
-      } as any);
+      });
 
       expect(result.message).toBe('ok');
       expect(result.user).toEqual(resp.user);
@@ -60,7 +66,7 @@ describe('auth API', () => {
 
     it('returns message and null user when backend provides only message', async () => {
       const resp = { message: 'verify your email' };
-      mockedAxiosClient.post.mockResolvedValueOnce(resp as any);
+      mockedAxiosClient.post.mockResolvedValueOnce(resp);
 
       const result = await auth.register({
         email: 'c@c.com',
@@ -69,7 +75,7 @@ describe('auth API', () => {
         last_name: 'C',
         password: 'pw',
         confirm_password: 'pw'
-      } as any);
+      });
 
       expect(result.message).toBe('verify your email');
       expect(result.user).toBeNull();
@@ -78,8 +84,8 @@ describe('auth API', () => {
     it('fetches user if tokens are returned', async () => {
       const resp = { access: 'acc', refresh: 'ref' };
       const user = { id: 3, email: 'd@d.com' };
-      mockedAxiosClient.post.mockResolvedValueOnce(resp as any);
-      mockedAxiosClient.get.mockResolvedValueOnce(user as any);
+      mockedAxiosClient.post.mockResolvedValueOnce(resp);
+      mockedAxiosClient.get.mockResolvedValueOnce(user);
 
       const result = await auth.register({
         email: 'd@d.com',
@@ -88,7 +94,7 @@ describe('auth API', () => {
         last_name: 'D',
         password: 'pw',
         confirm_password: 'pw'
-      } as any);
+      });
 
       expect(result.message).toBe('Registration successful.');
       expect(result.user).toEqual(user);
@@ -96,7 +102,7 @@ describe('auth API', () => {
 
     it('treats empty-success response as successful registration', async () => {
       // Some backends return 201/204 with empty body; ensure we handle that
-      mockedAxiosClient.post.mockResolvedValueOnce({} as any);
+      mockedAxiosClient.post.mockResolvedValueOnce({});
 
       const result = await auth.register({
         email: 'e@e.com',
@@ -105,7 +111,7 @@ describe('auth API', () => {
         last_name: 'E',
         password: 'pw',
         confirm_password: 'pw'
-      } as any);
+      });
 
       expect(result.message).toMatch(/Registration successful/i);
       expect(result.user).toBeNull();

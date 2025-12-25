@@ -2,6 +2,7 @@
 
 import { useMyApplications } from "@/hooks/useApplications";
 import { useAuth } from "@/context/AuthContext";
+import { Application } from "@/types";
 import Link from "next/link";
 import { FaBriefcase, FaCheckCircle, FaClock, FaEye } from "react-icons/fa";
 
@@ -102,7 +103,7 @@ export default function SeekerDashboard() {
 
         {applications?.length ? (
           <div className="space-y-4">
-            {applications.slice(0, 5).map((app: any) => (
+            {applications.slice(0, 5).map((app: Application) => (
               <div
                 key={app.id}
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
@@ -129,7 +130,7 @@ export default function SeekerDashboard() {
         ) : (
           <div className="text-center py-8">
             <FaBriefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">You haven't applied to any jobs yet.</p>
+            <p className="text-gray-600 mb-4">You haven&apos;t applied to any jobs yet.</p>
             <Link
               href="/jobs"
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"

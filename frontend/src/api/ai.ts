@@ -95,9 +95,11 @@ export const getJobRecommendations = async (
   return response.data;
 };
 
-export default {
+const aiAPI = {
   parseResume,
   extractSkills,
   matchResumeToJob,
   getJobRecommendations,
 };
+
+export default aiAPI;

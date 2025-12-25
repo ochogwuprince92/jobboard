@@ -33,7 +33,6 @@ export default function EmployerDashboard() {
           company={job.company}
           company_name={job.company_name}
           location={job.location}
-          salary={job.salary}
           employment_type={job.employment_type}
           remote={job.remote}
         />

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { login as loginAPI, resendVerification } from '@/api/auth';
+import { resendVerification } from '@/api/auth';
 import LoginPage from '../page';
 import '@testing-library/jest-dom';
 

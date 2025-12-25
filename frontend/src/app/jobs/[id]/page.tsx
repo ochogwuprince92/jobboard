@@ -2,13 +2,13 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getJobById } from "@/api/jobs";
 import { applyJob } from "@/api/applications";
 import { getResumes } from "@/api/resumes";
-import { saveJob, unsaveJob } from "@/api/savedJobs";
+import { saveJob, unsaveJob, type SavedJob } from "@/api/savedJobs";
 import { useAuth } from "@/context/AuthContext";
-import type { Job, Resume } from "@/types";
+import type { Job, JobTag } from "@/types";
 import {
   FaMapMarkerAlt,
   FaClock,
@@ -22,6 +22,7 @@ import {
   FaExternalLinkAlt
 } from "react-icons/fa";
 import Link from "next/link";
+import ShareModal from "@/components/common/ShareModal";
 
 export default function JobDetailPage() {
   const { id } = useParams();
@@ -33,15 +34,20 @@ export default function JobDetailPage() {
   const [selectedResume, setSelectedResume] = useState<number | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [savedJobId, setSavedJobId] = useState<number | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
-  const { data: job, isLoading, error } = useQuery({
+  const { data: job, isLoading, error } = useQuery<Job>({
     queryKey: ["job", id],
     queryFn: () => getJobById(id as string),
     enabled: !!id,
-    onSuccess: (data) => {
-      setIsSaved(data.is_saved || false);
-    },
   });
+
+  // Update saved state when job data changes
+  useEffect(() => {
+    if (job) {
+      setIsSaved(job.is_saved || false);
+    }
+  }, [job]);
 
   const { data: resumes, isLoading: resumesLoading } = useQuery({
     queryKey: ["resumes"],
@@ -60,19 +66,19 @@ export default function JobDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["job", id] }); // Refresh job data to update has_applied
       alert("Application submitted successfully!");
     },
-    onError: (error: any) => {
-      alert(error.response?.data?.message || "Failed to submit application");
+    onError: () => {
+      alert("Failed to submit application");
     },
   });
 
-  const saveMutation = useMutation({
+  const saveMutation = useMutation<SavedJob, Error, number>({
     mutationFn: (jobId: number) => saveJob(jobId),
     onSuccess: (data) => {
       setIsSaved(true);
       setSavedJobId(data.id);
       queryClient.invalidateQueries({ queryKey: ["job", id] });
     },
-    onError: (error: any) => {
+    onError: () => {
       alert("Failed to save job");
     },
   });
@@ -84,7 +90,7 @@ export default function JobDetailPage() {
       setSavedJobId(null);
       queryClient.invalidateQueries({ queryKey: ["job", id] });
     },
-    onError: (error: any) => {
+    onError: () => {
       alert("Failed to unsave job");
     },
   });
@@ -121,21 +127,7 @@ export default function JobDetailPage() {
   };
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: job?.title,
-        text: `Check out this job: ${job?.title} at ${job?.company?.company_name}`,
-        url: window.location.href,
-      });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert("Job link copied to clipboard!");
-    }
-  };
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
-    }
+    setShowShareModal(true);
   };
 
   if (isLoading) {
@@ -151,7 +143,7 @@ export default function JobDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Job Not Found</h1>
-          <p className="text-gray-600 mb-6">The job you're looking for doesn't exist or has been removed.</p>
+          <p className="text-gray-600 mb-6">The job you&apos;re looking for doesn&apos;t exist or has been removed.</p>
           <Link
             href="/jobs"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -242,7 +234,9 @@ export default function JobDetailPage() {
                           ? `$${job.min_salary.toLocaleString()} - $${job.max_salary.toLocaleString()}`
                           : job.min_salary
                           ? `From $${job.min_salary.toLocaleString()}`
-                          : `Up to $${job.max_salary.toLocaleString()}`
+                          : job.max_salary
+                          ? `Up to $${job.max_salary.toLocaleString()}`
+                          : ''
                         }
                       </div>
                     )}
@@ -304,7 +298,7 @@ export default function JobDetailPage() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Skills & Technologies</h2>
                 <div className="flex flex-wrap gap-2">
-                  {job.tags.map((tag: any) => (
+                  {job.tags.map((tag: JobTag) => (
                     <span
                       key={tag.id}
                       className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
@@ -363,7 +357,9 @@ export default function JobDetailPage() {
                         ? `$${job.min_salary.toLocaleString()} - $${job.max_salary.toLocaleString()}`
                         : job.min_salary
                         ? `From $${job.min_salary.toLocaleString()}`
-                        : `Up to $${job.max_salary.toLocaleString()}`
+                        : job.max_salary
+                        ? `Up to $${job.max_salary.toLocaleString()}`
+                        : ''
                       }
                     </span>
                   </div>
@@ -451,6 +447,13 @@ export default function JobDetailPage() {
           </div>
         </div>
       )}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        jobTitle={job?.title || ""}
+        jobCompany={job?.company?.company_name || ""}
+        jobUrl={typeof window !== "undefined" ? window.location.href : ""}
+      />
     </div>
   );
 }

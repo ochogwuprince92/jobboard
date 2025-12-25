@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosResponse, AxiosRequestConfig, InternalAxiosRequestConfig } from "axios";
 
 // Create axios instance with base URL from environment variables
 const axiosClient = axios.create({
@@ -92,7 +92,7 @@ const isTokenExpired = (token: string): boolean => {
   try {
     const decoded = JSON.parse(atob(token.split('.')[1]));
     return decoded.exp * 1000 < Date.now();
-  } catch (e) {
+  } catch {
     return true;
   }
 };
@@ -128,7 +128,7 @@ axiosClient.interceptors.response.use(
     return response.data;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
     
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -147,6 +147,7 @@ axiosClient.interceptors.response.use(
         
         const { access } = response.data;
         localStorage.setItem('access_token', access);
+        originalRequest.headers = originalRequest.headers || {};
         originalRequest.headers.Authorization = `Bearer ${access}`;
         
         // Retry the original request with the new token
@@ -207,7 +208,7 @@ axiosClient.interceptors.response.use(
         
         // Retry the original request
         return axiosClient(originalRequest);
-      } catch (error) {
+      } catch (_error) {
         // If refresh fails, clear tokens and redirect to login
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");

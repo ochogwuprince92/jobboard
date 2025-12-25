@@ -27,8 +27,8 @@ export default function JobMatcher({ jobId, jobTitle, resumeId }: JobMatcherProp
     try {
       const result = await matchResumeToJob(jobId, resumeId);
       setMatchResult(result);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to calculate match');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Failed to calculate match');
     } finally {
       setLoading(false);
     }

@@ -79,7 +79,7 @@ describe('AuthContext', () => {
     });
 
     // Provide API-level mock implementations for auth functions used by the provider
-    (apiAuth.login as jest.Mock).mockImplementation(async (_data: any) => ({
+    (apiAuth.login as jest.Mock).mockImplementation(async (_data: unknown) => ({
       access: 'test-token',
       refresh: 'refresh-token',
       user: mockUser

@@ -2,192 +2,106 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { verifyEmail } from '@/api/auth';
+import Link from 'next/link';
+import { FaCheckCircle, FaTimesCircle, FaSpinner } from 'react-icons/fa';
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [error, setError] = useState('');
-  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     const token = searchParams.get('token');
-    console.log('Token from URL:', token);
-    setDebugInfo(prev => prev + '\nToken from URL: ' + token);
 
     if (!token) {
-      const errorMsg = 'No verification token provided';
-      console.error(errorMsg);
       setStatus('error');
-      setError(errorMsg);
-      setDebugInfo(prev => prev + '\n' + errorMsg);
+      setError('No verification token provided in the URL.');
       return;
     }
 
     const verify = async () => {
-      // Create controller and timeout outside try so the finally/cleanup
-      // can clear them deterministically.
-      const controller = new AbortController();
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
       try {
-        const apiUrl = `/api/verify-email?token=${encodeURIComponent(token)}`;
-        console.log('Making request to:', apiUrl);
-        setDebugInfo(prev => prev + '\nMaking request to: ' + apiUrl);
-
-        // Only abort if not already aborted; wrap abort call to be idempotent
-        timeoutId = setTimeout(() => {
-          try {
-            if (!controller.signal.aborted) controller.abort();
-          } catch (e) {
-            // Some environments may throw when aborting an already-aborted
-            // signal — ignore these safely.
-            console.warn('Abort controller abort() threw:', e);
-          }
-        }, 10000); // 10 second timeout
-
-        const response = await fetch(apiUrl, {
-          signal: controller.signal,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        // Clear timeout as soon as fetch completes
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-        
-        console.log('Response status:', response.status);
-        setDebugInfo(prev => prev + '\nResponse status: ' + response.status);
-        
-        // Try to parse JSON, but tolerate non-JSON responses (HTML/text)
-        let data: any = null;
-        let textResponse: string | null = null;
-        try {
-          data = await response.json();
-          console.log('Response data (JSON):', data);
-          setDebugInfo(prev => prev + '\nResponse data: ' + JSON.stringify(data, null, 2));
-        } catch (jsonError) {
-          // Not JSON — try to read plain text so we can surface a helpful message
-          console.warn('Response is not valid JSON, attempting to read text');
-          try {
-            textResponse = await response.text();
-            setDebugInfo(prev => prev + '\nResponse text: ' + textResponse);
-            console.log('Response text:', textResponse);
-          } catch (textErr) {
-            console.warn('Failed to read response text:', textErr);
-          }
-        }
-
-        if (!response.ok) {
-          // Prefer structured JSON message, then plain text, then status
-          const messageFromData = data?.message || data?.detail || (typeof data === 'string' ? data : null);
-          const message = messageFromData || textResponse || `Verification failed with status ${response.status}`;
-          throw new Error(message);
-        }
-        
-        console.log('Verification successful');
+        await verifyEmail(token);
         setStatus('success');
-        setDebugInfo(prev => prev + '\nVerification successful');
-        
         // Redirect to login after 3 seconds
         setTimeout(() => {
           router.push('/login?verified=true');
         }, 3000);
-      } catch (err: any) {
-        console.error('Verification error:', err);
-        // If the fetch was aborted, surface a friendly timeout message.
-        const isAbort = err?.name === 'AbortError' || err?.message?.toLowerCase()?.includes('aborted') || err?.message?.toLowerCase()?.includes('signal');
-        const errorMsg = isAbort
-          ? 'Request timed out. Please check your connection and try again.'
-          : err.message || 'Verification failed. Please try again.';
-
+      } catch (err) {
+        console.error('Email verification error:', err);
         setStatus('error');
-        setError(errorMsg);
-        setDebugInfo(prev => prev + '\nError: ' + errorMsg);
-      } finally {
-        // Ensure timeout is cleared in all cases
-        // (no-op if already cleared)
-        try {
-          if (timeoutId) {
-            clearTimeout(timeoutId);
-            timeoutId = null;
-          }
-        } catch (e) {
-          // ignore
-        }
+        setError(err instanceof Error ? err.message : 'Failed to verify email. The link may be invalid or expired.');
       }
     };
 
     verify();
-
-    // Cleanup: abort any in-flight request if the component unmounts or
-    // the search params change.
-    return () => {
-      try {
-        // Note: controller is inside verify; we can't directly access it here
-        // because verify created its own controller. To ensure abort on
-        // unmount, call a fresh AbortController and rely on the fetch to be
-        // garbage-collected, but we can instead set a flag by calling
-        // window.fetch is not abortable here. Simpler: no-op (we already
-        // handle timeouts inside verify). If you want aggressive abort on
-        // unmount, we could move controller to outer scope — but current
-        // approach avoids race conditions with double-abort.
-      } catch (e) {
-        // ignore
-      }
-    };
   }, [searchParams, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {status === 'verifying' && 'Verifying Email...'}
-            {status === 'success' && 'Email Verified!'}
-            {status === 'error' && 'Verification Error'}
-          </h2>
-        </div>
-        <div className="mt-8 space-y-6">
-          {status === 'verifying' && (
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4 text-sm text-gray-600">Please wait while we verify your email address...</p>
-            </div>
-          )}
-          
-          {status === 'success' && (
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="mt-4 text-sm text-gray-600">Your email has been successfully verified! Redirecting to login...</p>
-            </div>
-          )}
-          
-          {status === 'error' && (
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
-                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <p className="mt-4 text-sm text-red-600">{error}</p>
-              <div className="mt-4">
-                <button
-                  onClick={() => window.location.href = '/register'}
-                  className="text-indigo-600 hover:text-indigo-500"
-                >
-                  Back to registration
-                </button>
-              </div>
-            </div>
-          )}
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <div className="text-center">
+            {status === 'verifying' && (
+              <>
+                <FaSpinner className="mx-auto h-12 w-12 text-blue-600 animate-spin" />
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                  Verifying your email
+                </h2>
+                <p className="mt-2 text-center text-sm text-gray-600">
+                  Please wait while we verify your email address...
+                </p>
+              </>
+            )}
+
+            {status === 'success' && (
+              <>
+                <FaCheckCircle className="mx-auto h-12 w-12 text-green-600" />
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                  Email verified successfully!
+                </h2>
+                <p className="mt-2 text-center text-sm text-gray-600">
+                  Your email has been verified. You will be redirected to the login page shortly.
+                </p>
+                <div className="mt-6">
+                  <Link
+                    href="/login"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Go to Login
+                  </Link>
+                </div>
+              </>
+            )}
+
+            {status === 'error' && (
+              <>
+                <FaTimesCircle className="mx-auto h-12 w-12 text-red-600" />
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                  Verification failed
+                </h2>
+                <p className="mt-2 text-center text-sm text-gray-600">
+                  {error}
+                </p>
+                <div className="mt-6 space-y-4">
+                  <Link
+                    href="/login"
+                    className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Back to Login
+                  </Link>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -57,7 +57,7 @@ export async function GET(request: Request) {
       // Try to parse as JSON
       try {
         data = responseText ? JSON.parse(responseText) : {};
-      } catch (jsonError) {
+      } catch (_jsonError) {
         console.error('Failed to parse JSON response. Response was:', responseText);
         // Return backend status and raw body to surface the root cause (helps debug HTML error pages)
         return NextResponse.json(

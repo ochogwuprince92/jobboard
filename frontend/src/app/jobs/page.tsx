@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getJobs } from "@/api/jobs";
 import type { Job } from "@/types";
@@ -16,21 +16,25 @@ export default function JobsPage() {
     isLoading, 
     refetch, 
     isError,
+    error: queryError,
     isRefetching 
   } = useQuery<{ results: Job[] }, unknown>({
     queryKey: ["jobs", filters],
     queryFn: () => getJobs(filters),
-    onError: (err: unknown) => {
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Failed to load jobs. Please try again later.';
-      setError(errorMessage);
-    },
-    onSuccess: () => {
-      setError(null); // Clear any previous errors on success
-    },
     retry: 1,
   });
+
+  // Handle errors
+  useEffect(() => {
+    if (isError && queryError) {
+      const errorMessage = queryError instanceof Error 
+        ? queryError.message 
+        : 'Failed to load jobs. Please try again later.';
+      setError(errorMessage);
+    } else if (!isError) {
+      setError(null); // Clear any previous errors on success
+    }
+  }, [isError, queryError]);
 
   const jobs = data?.results || [];
 

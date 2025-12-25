@@ -11,6 +11,16 @@ interface Job {
   location: string;
   type: string;
   salary?: string;
+  company_name?: string;
+}
+
+interface ApiJob {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  type: string;
+  salary?: string;
 }
 
 export default function SeekerDashboard() {
@@ -28,8 +38,12 @@ export default function SeekerDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSavedJobs(await savedRes.json());
-      setAppliedJobs(await appliedRes.json());
+      const savedData = await savedRes.json();
+      const appliedData = await appliedRes.json();
+      
+      // Transform company field to company_name for JobCard compatibility
+      setSavedJobs(savedData.map((job: ApiJob) => ({ ...job, company_name: job.company })));
+      setAppliedJobs(appliedData.map((job: ApiJob) => ({ ...job, company_name: job.company })));
     };
     fetchJobs();
   }, []);
@@ -38,10 +52,36 @@ export default function SeekerDashboard() {
     <div>
       <DashboardNav role="seeker" />
       <h2>Saved Jobs</h2>
-      {savedJobs.map((job) => <JobCard key={job.id} {...job} />)}
+      {savedJobs.length > 0 ? (
+        savedJobs.map((job) => (
+          <JobCard 
+            key={job.id} 
+            id={job.id}
+            title={job.title}
+            company_name={job.company_name}
+            location={job.location}
+            employment_type={job.type}
+          />
+        ))
+      ) : (
+        <p>No saved jobs yet.</p>
+      )}
 
       <h2>Applied Jobs</h2>
-      {appliedJobs.map((application) => <JobCard key={application.id} {...application} />)}
+      {appliedJobs.length > 0 ? (
+        appliedJobs.map((application) => (
+          <JobCard 
+            key={application.id} 
+            id={application.id}
+            title={application.title}
+            company_name={application.company_name}
+            location={application.location}
+            employment_type={application.type}
+          />
+        ))
+      ) : (
+        <p>No applied jobs yet.</p>
+      )}
     </div>
   );
 }

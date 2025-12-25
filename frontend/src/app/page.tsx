@@ -160,7 +160,7 @@ export default function HomePage() {
             >
               Find Your Dream Job
               <span className="block mt-2 bg-gradient-to-r from-grass-600 via-mint-600 to-lime-600 bg-clip-text text-transparent">
-                In Nature's Way
+                In Nature&apos;s Way
               </span>
             </motion.h1>
 
@@ -272,7 +272,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {featuredJobs.map((job, index) => (
+            {featuredJobs.map((job, _index) => (
               <motion.div
                 key={job.id}
                 variants={fadeInUp}

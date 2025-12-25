@@ -1,5 +1,5 @@
 import axiosClient from "./axiosClient";
-import type { Employer, Job } from "@/types";
+import type { Employer } from "@/types";
 
 export const getEmployers = async (): Promise<Employer[]> => {
   const response = await axiosClient.get("/employers/");

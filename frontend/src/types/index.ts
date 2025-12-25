@@ -49,6 +49,8 @@ export interface Job {
   is_active: boolean;
   posted_at: string;
   postedDate?: string;  // Formatted date for display
+  is_saved?: boolean;   // Whether the current user has saved this job
+  has_applied?: boolean; // Whether the current user has applied to this job
   // Additional fields from API/components
   results?: Job[];      // For paginated responses
   employer?: string;    // For filtering
@@ -88,7 +90,7 @@ export interface Application {
   id: number;
   job: number;
   applicant: number;
-  resume: number;
+  resume: string;
   cover_letter?: string;
   status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
   applied_at: string;
@@ -101,10 +103,13 @@ export interface Application {
 export interface Notification {
   id: number;
   user: number;
+  title: string;
   message: string;
   notification_type: string;
   is_read: boolean;
   created_at: string;
+  related_job?: number;
+  related_application?: number;
 }
 
 // AI Types

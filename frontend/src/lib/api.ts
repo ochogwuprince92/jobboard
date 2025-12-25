@@ -1,18 +1,18 @@
 import axiosClient from '../api/axiosClient';
 
 // Common API utilities and base functions
-export default {
+const apiUtils = {
   get: async <T>(url: string) => {
     const response = await axiosClient.get<T>(url);
     return response;
   },
 
-  post: async <T>(url: string, data: any) => {
+  post: async <T>(url: string, data: Record<string, unknown>) => {
     const response = await axiosClient.post<T>(url, data);
     return response;
   },
 
-  put: async <T>(url: string, data: any) => {
+  put: async <T>(url: string, data: Record<string, unknown>) => {
     const response = await axiosClient.put<T>(url, data);
     return response;
   },
@@ -22,8 +22,10 @@ export default {
     return response;
   },
 
-  patch: async <T>(url: string, data: any) => {
+  patch: async <T>(url: string, data: Record<string, unknown>) => {
     const response = await axiosClient.patch<T>(url, data);
     return response;
   }
 };
+
+export default apiUtils;

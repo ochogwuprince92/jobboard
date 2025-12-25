@@ -17,13 +17,19 @@ export default function CreateJobPage() {
     location: "",
     min_salary: "",
     max_salary: "",
-    employment_type: "full-time",
+    employment_type: "full-time" as "full-time" | "part-time" | "contract" | "internship",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ 
+      ...form, 
+      [name]: name === 'employment_type' 
+        ? value as "full-time" | "part-time" | "contract" | "internship"
+        : value 
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,10 +42,10 @@ export default function CreateJobPage() {
         ...form,
         min_salary: form.min_salary ? parseInt(form.min_salary) : undefined,
         max_salary: form.max_salary ? parseInt(form.max_salary) : undefined,
-      } as any);
+      });
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.response?.data?.detail || err.response?.data?.error || "Failed to create job");
+    } catch (err) {
+      setError((err as { response?: { data?: { detail?: string; error?: string } } })?.response?.data?.detail || (err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Failed to create job");
     } finally {
       setLoading(false);
     }
